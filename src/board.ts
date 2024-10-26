@@ -1,3 +1,9 @@
+type Gem = {
+  x: number,
+  y: number,
+  name: string
+}
+
 export class Board {
   gemsPositions: (string | undefined)[]
   gemsFallHeight: number[]
@@ -54,19 +60,67 @@ export class Board {
     }
     this.gemsPositions = this.gemsPositions.slice(0, this.width * this.height);
   }
+  clearBoard() : void {
+    this.gemsPositions = []
+  }
   sliceMatches() : number[][] {
     const matches: number[][] = this.getMatches();
     matches.forEach((match) => { this.setGem(match[0], match[1], undefined) })
     return matches
   }
-  getMatches() : number[][] {
+  getPossibleMatch(): Gem | undefined {
+    const indexes = Array.from({ length: this.width * this.height }, (_, i) => i).sort(() => Math.random() - 0.5);
+
+    const checkSwaps = (direction: string) => {
+        let offset: number = 1
+        if (direction === 'x') { offset = 1 }
+        else if (direction === 'y') { offset = this.width }
+        else { return }
+
+        for (let index of indexes) {
+            if (direction === 'x' && index % this.width == this.width - 1) { continue }
+            if (direction === 'y' && index >= indexes.length - this.width) { continue }
+
+            const gemsPositions = Array.from(this.gemsPositions);
+            const swapIndex = index + offset;
+            [gemsPositions[index], gemsPositions[swapIndex]] = [gemsPositions[swapIndex], gemsPositions[index]];
+
+            let matches = this.getMatches(gemsPositions)
+            if (matches.length > 0) {
+                let name: string = gemsPositions[matches[0][1] * this.width + matches[0][0]]!
+                if (this.gemsPositions[index] == name) {
+                  return index;
+                } else {
+                  return index + offset;
+                }
+            }
+        }
+        return undefined;
+    };
+
+    const directions = Math.round(Math.random()) === 0 ? ['x', 'y'] : ['y', 'x'] // 1 for horizontal, width for vertical
+
+    for (let direction of directions) {
+      let resultIndex = checkSwaps(direction);
+      if (resultIndex !== undefined) {
+        let x = resultIndex % this.width;
+        let y = Math.floor(resultIndex / this.width);
+        let name: string = this.getGem(x, y)!
+        return { x, y, name }
+      }
+    }
+
+    return undefined;
+  }
+
+  getMatches(gemsPositions: (string | undefined)[] = this.gemsPositions) : number[][] {
     const checkForMatches = (indexes: number[]) => {
       let gemCount: number = 1;
-      let gemName: string | undefined = this.gemsPositions[indexes[0]];
+      let gemName: string | undefined = gemsPositions[indexes[0]];
       if (gemName === undefined) { throw new Error('Проверка на совпадения с незаполненными гемами') }
 
       for(let i = 1; i <= indexes.length; i++) {
-        if (gemName == this.gemsPositions[indexes[i]] && i != indexes.length) {
+        if (gemName == gemsPositions[indexes[i]] && i != indexes.length) {
           gemCount++;
         } else {
           if (gemCount >= 3) {
@@ -75,7 +129,7 @@ export class Board {
             }
           };
           gemCount = 1;
-          gemName = this.gemsPositions[indexes[i]]!;
+          gemName = gemsPositions[indexes[i]]!;
         }
       }
     }
