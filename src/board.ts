@@ -68,7 +68,7 @@ export class Board {
     matches.forEach((match) => { this.setGem(match[0], match[1], undefined) })
     return matches
   }
-  getPossibleMatch(): Gem | undefined {
+  getPossibleMatch(): Gem[] | undefined {
     const indexes = Array.from({ length: this.width * this.height }, (_, i) => i).sort(() => Math.random() - 0.5);
 
     const checkSwaps = (direction: string) => {
@@ -89,9 +89,9 @@ export class Board {
             if (matches.length > 0) {
                 let name: string = gemsPositions[matches[0][1] * this.width + matches[0][0]]!
                 if (this.gemsPositions[index] == name) {
-                  return index;
+                  return [index, index + offset];
                 } else {
-                  return index + offset;
+                  return [index + offset, index];
                 }
             }
         }
@@ -101,12 +101,14 @@ export class Board {
     const directions = Math.round(Math.random()) === 0 ? ['x', 'y'] : ['y', 'x'] // 1 for horizontal, width for vertical
 
     for (let direction of directions) {
-      let resultIndex = checkSwaps(direction);
-      if (resultIndex !== undefined) {
-        let x = resultIndex % this.width;
-        let y = Math.floor(resultIndex / this.width);
-        let name: string = this.getGem(x, y)!
-        return { x, y, name }
+      let resultIndexes = checkSwaps(direction);
+      if (resultIndexes) {
+        return resultIndexes.map((index) => {
+          let x = index % this.width;
+          let y = Math.floor(index / this.width);
+          let name: string = this.getGem(x, y)!
+          return { x, y, name }
+        })
       }
     }
 

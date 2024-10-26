@@ -37,16 +37,19 @@ export class GameManager {
   score: number
   callbacks: Callbacks
   playerInactiveTime: Number
+  firstPlayerPhase: boolean
   constructor(selector: string, callbacks?: Callbacks) {
     this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
     this.canvasService = new CanvasService(selector, BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO);
     this.score = 0
     this.playerInactiveTime = 0
+    this.firstPlayerPhase = true
     this.callbacks = {
       scoreUpdate: callbacks?.scoreUpdate
     }
   }
   start() {
+    this.firstPlayerPhase = true
     this.canvasService.loadAssets().then(() => {
       this.dropPhase()
     })
@@ -147,12 +150,13 @@ export class GameManager {
     }
   }
   playerPhase() {
-    let nextGem = this.board.getPossibleMatch()
-    if (!nextGem) {
+    let possibleMatches = this.board.getPossibleMatch()
+    if (!possibleMatches) {
       this.restartPhase();
       return;
     }
     const helpAnimationLength = 600;
+    const handAnimationLength = 1200;
     let helpTimer = Date.now()
     let playerInactiveTime = 0;
     let showHelp = false;
@@ -160,7 +164,7 @@ export class GameManager {
     const listen = (timeStamp: number) => {
       playerInactiveTime += Date.now() - helpTimer
       helpTimer = Date.now()
-      if (showHelp === false && playerInactiveTime > HELP_THRESHOLD * 1000) {
+      if (showHelp === false && (playerInactiveTime > HELP_THRESHOLD * 1000)) {
         showHelp = true
         helpStartTime = timeStamp;
       }
@@ -179,6 +183,7 @@ export class GameManager {
         } else {
           timePercent = (1 - timePercent) * 2
         }
+        let nextGem = possibleMatches[0]
         this.canvasService.drawGem(nextGem.x, nextGem.y, nextGem.name, 0.9 + 0.1 * timePercent);
       }
       if (hoverGemX !== undefined && hoverGemY !== undefined) {
@@ -186,6 +191,17 @@ export class GameManager {
         if (gemName !== undefined) {
           this.canvasService.drawGem(hoverGemX, hoverGemY, gemName, 1);
         }
+      }
+      if (this.firstPlayerPhase) {
+        let timePercent = (timeStamp % handAnimationLength) / handAnimationLength;
+        if (timePercent <= 0.5) {
+          timePercent *= 2
+        } else {
+          timePercent = (1 - timePercent) * 2
+        }
+        let diffx = possibleMatches[1].x - possibleMatches[0].x;
+        let diffy = possibleMatches[1].y - possibleMatches[0].y;
+        this.canvasService.drawHand(possibleMatches[0].x + diffx * timePercent, possibleMatches[0].y + diffy * timePercent);
       }
       if (this.canvasService.isGemExchange && hoverGemX !== undefined && hoverGemY !== undefined && activeGemX !== undefined && activeGemY !== undefined) {
         let targetGemX: number, targetGemY: number
@@ -203,6 +219,7 @@ export class GameManager {
           this.canvasService.activeGemY = undefined;
           this.canvasService.isGemExchange = false;
 
+          this.firstPlayerPhase = false;
           this.gemMovePhase(targetGemX, targetGemY, activeGemX, activeGemY);
         } else {
           requestAnimationFrame(listen);
@@ -211,7 +228,7 @@ export class GameManager {
         requestAnimationFrame(listen);
       }
     }
-    listen(0);
+    requestAnimationFrame(listen);
   }
   gemMovePhase(targetGemX: number, targetGemY: number, activeGemX: number, activeGemY: number) {
     const firstGem = this.board.getGem(activeGemX, activeGemY);
@@ -287,10 +304,3 @@ export class GameManager {
     }
   }
 }
-
-
-
-
-
-
-

@@ -16,6 +16,7 @@ export class CanvasService {
   boardWidth: number
   boardHeight: number
   gems_images: Record<string, HTMLImageElement>
+  handImage: HTMLImageElement
   hoverGemX: number | undefined
   hoverGemY: number | undefined
   activeGemX: number | undefined
@@ -34,6 +35,7 @@ export class CanvasService {
     this.canvas.style.height = this.canvas.height * CANVAS_SCALE +'px';
     this.gems_info = gems_info;
     this.gems_images = {};
+    this.handImage = new Image();
     this.isGemExchange = false;
 
     this.canvas.addEventListener('mousemove', (event) => {
@@ -55,6 +57,13 @@ export class CanvasService {
 
     this.canvas.addEventListener('mouseup', () => {
     });
+  }
+  drawHand(x: number, y: number) {
+    const scale = 0.8;
+    const margin = (1 - scale) / 2;
+    const xpixels = (margin + x) * CELL_SIZE;
+    const ypixels = (this.boardHeight - 1 - y + margin) * CELL_SIZE + CELL_SIZE / 4;
+    this.ctx.drawImage(this.handImage, xpixels, ypixels, CELL_SIZE * scale, CELL_SIZE * scale);
   }
   drawGem(x: number, y: number, gem_name: string, scale: number = 0.9) {
     const margin = (1 - scale) / 2;
@@ -87,6 +96,10 @@ export class CanvasService {
         };
       }));
     })
+    promiseList.push(new Promise<void>((resolve) => {
+      this.handImage.src = "../images/hand.svg";
+      this.handImage.onload = () => { resolve(); };
+    }));
     return Promise.all(promiseList);
   }
 }
