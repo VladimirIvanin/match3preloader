@@ -25,7 +25,7 @@ const GEMS_INFO = [
 ]
 const BOARD_WIDTH = 5;
 const BOARD_HEIGHT = 5;
-const HELP_THRESHOLD = 10;
+const HELP_THRESHOLD = 5;
 
 type Callbacks = {
   scoreUpdate: ((score: number) => void) | undefined
@@ -147,18 +147,23 @@ export class GameManager {
     }
   }
   playerPhase() {
-    let timestamp = Date.now()
-    let playerInactiveTime = 0;
-    let showHelp = false;
     let nextGem = this.board.getPossibleMatch()
     if (!nextGem) {
       this.restartPhase();
       return;
     }
-    const listen = () => {
-      playerInactiveTime += Date.now() - timestamp
-      timestamp = Date.now()
-      if (playerInactiveTime > HELP_THRESHOLD * 1000) { showHelp = true }
+    const helpAnimationLength = 600;
+    let helpTimer = Date.now()
+    let playerInactiveTime = 0;
+    let showHelp = false;
+    let helpStartTime = 0
+    const listen = (timeStamp: number) => {
+      playerInactiveTime += Date.now() - helpTimer
+      helpTimer = Date.now()
+      if (showHelp === false && playerInactiveTime > HELP_THRESHOLD * 1000) {
+        showHelp = true
+        helpStartTime = timeStamp;
+      }
 
       const hoverGemX: number | undefined = this.canvasService.hoverGemX;
       const hoverGemY: number | undefined = this.canvasService.hoverGemY;
@@ -167,8 +172,14 @@ export class GameManager {
       this.canvasService.clear();
       const exceptions = hoverGemX != undefined && hoverGemY != undefined ? [[hoverGemX, hoverGemY]] : undefined;
       this.canvasService.drawBoard(this.board, exceptions);
-      if (nextGem) {
-        this.canvasService.drawGem(nextGem.x, nextGem.y, nextGem.name, 1.2);
+      if (showHelp) {
+        let timePercent = ((timeStamp - helpStartTime) % helpAnimationLength) / helpAnimationLength;
+        if (timePercent <= 0.5) {
+          timePercent *= 2
+        } else {
+          timePercent = (1 - timePercent) * 2
+        }
+        this.canvasService.drawGem(nextGem.x, nextGem.y, nextGem.name, 0.9 + 0.1 * timePercent);
       }
       if (hoverGemX !== undefined && hoverGemY !== undefined) {
         const gemName = this.board.getGem(hoverGemX, hoverGemY)
@@ -200,7 +211,7 @@ export class GameManager {
         requestAnimationFrame(listen);
       }
     }
-    listen();
+    listen(0);
   }
   gemMovePhase(targetGemX: number, targetGemY: number, activeGemX: number, activeGemY: number) {
     const firstGem = this.board.getGem(activeGemX, activeGemY);
