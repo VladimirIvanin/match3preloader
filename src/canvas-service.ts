@@ -1,4 +1,5 @@
 import { Board } from './board.ts';
+import images from './images.ts'
 
 const CANVAS_SCALE = 0.5;
 const CELL_SIZE = 200;
@@ -97,7 +98,7 @@ export class CanvasService {
       }));
     })
     promiseList.push(new Promise<void>((resolve) => {
-      this.handImage.src = "../images/hand.svg";
+      this.handImage.src = images.hand;
       this.handImage.onload = () => { resolve(); };
     }));
     return Promise.all(promiseList);

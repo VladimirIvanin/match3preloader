@@ -1,25 +1,26 @@
 import { Board } from './board.ts';
 import { CanvasService } from './canvas-service.ts';
+import images from './images.ts'
 
 const GEMS_INFO = [
   { name: "mails",
-    src: "../images/mails.svg",
+    src: images.mails,
     image: new Image()
   },
   { name: "reviews",
-    src: "../images/reviews.svg",
+    src: images.reviews,
     image: new Image()
   },
   { name: "notifications",
-    src: "../images/notifications.svg",
+    src: images.notifications,
     image: new Image()
   },
   { name: "carts",
-    src: "../images/carts.svg",
+    src: images.carts,
     image: new Image()
   },
   { name: "products",
-    src: "../images/products.svg",
+    src: images.products,
     image: new Image()
   }
 ]
@@ -31,7 +32,7 @@ type Callbacks = {
   scoreUpdate: ((score: number) => void) | undefined
 }
 
-export class GameManager {
+export default class GameManager {
   board: Board
   canvasService: CanvasService
   score: number
