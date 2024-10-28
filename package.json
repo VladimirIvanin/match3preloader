@@ -1,9 +1,9 @@
 {
-  "name": "insales-tile-matching",
+  "name": "match3preloader",
   "version": "1.0.0",
   "main": "./src/game-manager.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "typescript": "^5.5.3"
