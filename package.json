@@ -1,11 +1,12 @@
 {
   "name": "match3preloader",
   "version": "1.0.0",
-  "main": "./src/game-manager.ts",
+  "main": "./dist/game-manager.js",
+  "types": "./dist/game-manager.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "typescript": "^5.6.3"
   }
 }

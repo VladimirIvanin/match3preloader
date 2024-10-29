@@ -1,5 +1,5 @@
-import { Board } from './board.ts';
-import images from './images.ts'
+import { Board } from './board';
+import images from './images'
 
 const CANVAS_SCALE = 0.5;
 const CELL_SIZE = 200;
