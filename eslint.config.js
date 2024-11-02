@@ -18,7 +18,7 @@ export default tseslint.config(
         ...globals.es2020
       }
     },
-    files: ['**/*.ts', '**/*.tsx'], // Исключите JS-файлы, если они не используют TypeScript
+    files: ['src/**/*.ts', 'src/**/*.tsx'], // Изменено здесь
     rules: {
       'prefer-const': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
