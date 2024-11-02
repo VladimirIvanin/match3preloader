@@ -26,7 +26,7 @@ export class CanvasService {
 
   constructor(selector: string, width: number, height: number, gems_info: GemInfo[]) {
     this.canvas = document.querySelector<HTMLCanvasElement>(selector)!;
-    if (!this.canvas) { throw 'Wrong selector'; return }
+    if (!this.canvas) { throw 'Wrong selector'; }
     this.ctx = this.canvas.getContext("2d")!;
     this.boardWidth = width;
     this.boardHeight = height;

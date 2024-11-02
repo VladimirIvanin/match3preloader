@@ -1,12 +1,25 @@
 {
   "name": "match3preloader",
   "version": "1.0.0",
+  "type": "module",
   "main": "./dist/game-manager.js",
   "types": "./dist/game-manager.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JetFlynn/match3preloader"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "dev": "vite",
+    "build:playground": "vite build",
+    "lint": "eslint src"
   },
   "devDependencies": {
-    "typescript": "^5.6.3"
+    "@eslint/js": "^9.14.0",
+    "eslint": "^9.14.0",
+    "globals": "^15.11.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.12.2",
+    "vite": "^5.4.10"
   }
 }

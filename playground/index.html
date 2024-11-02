@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match3 Preloader Playground</title>
+  <style>
+    :root {
+      --primary-color: #4CAF50;
+      --primary-color-hover: #45a049;
+      --stop-color: #f44336;
+      --stop-color-hover: #d32f2f;
+      --background-color: #f0f0f0;
+      --container-background: white;
+      --text-color: #333;
+      --border-color: #ddd;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+
+    .game-container {
+      text-align: center;
+      background-color: var(--container-background);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px var(--shadow-color);
+      transition: all 0.3s ease;
+      width: 540px;
+    }
+
+    #gameCanvas {
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      max-width: 100%;
+      min-width: 500px;
+      min-height: 500px;
+    }
+
+    .controls {
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease, transform 0.1s ease;
+    }
+
+    button:hover {
+      background-color: var(--primary-color-hover);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button#startButton {
+      background-color: var(--primary-color);
+    }
+
+    button#startButton:hover {
+      background-color: var(--primary-color-hover);
+    }
+
+    button#stopButton {
+      background-color: var(--stop-color);
+    }
+
+    button#stopButton:hover {
+      background-color: var(--stop-color-hover);
+    }
+
+    #score {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div class="controls">
+      <button id="startButton">Start</button>
+      <button id="stopButton">Stop</button>
+    </div>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+
+</html>
