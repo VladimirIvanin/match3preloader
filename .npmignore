@@ -1,3 +1,4 @@
-src
+src/
+playground/
 tsconfig.json
-.gitignore
+vite.config.ts
