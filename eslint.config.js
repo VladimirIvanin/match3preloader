@@ -1,5 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -10,20 +11,21 @@ export default tseslint.config(
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: 'module',
+        project: './tsconfig.json'
       },
       globals: {
-        document: 'readonly',
-        window: 'readonly',
-        Image: 'readonly',
-        requestAnimationFrame: 'readonly',
-      },
+        ...globals.browser,
+        ...globals.es2020
+      }
     },
-    files: ['**/*.ts', '**/*.tsx', '**/*.js'],
+    files: ['**/*.ts', '**/*.tsx'], // Исключите JS-файлы, если они не используют TypeScript
     rules: {
-      'prefer-const': 'warning',
+      'prefer-const': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
-      '@typescript-eslint/no-wrapper-object-types': 'error',
-      '@typescript-eslint/no-unsafe-function-type': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
       'no-undef': 'error',
       'no-unreachable': 'error',
     },
