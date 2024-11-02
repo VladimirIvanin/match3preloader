@@ -18,7 +18,7 @@ export default tseslint.config(
         ...globals.es2020
       }
     },
-    files: ['src/**/*.ts', 'src/**/*.tsx'], // Изменено здесь
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     rules: {
       'prefer-const': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
