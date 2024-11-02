@@ -92,7 +92,7 @@ export class Board {
         else if (direction === 'y') { offset = this.width }
         else { return }
 
-        for (let index of indexes) {
+        for (const index of indexes) {
             if (direction === 'x' && index % this.width == this.width - 1) { continue }
             if (direction === 'y' && index >= indexes.length - this.width) { continue }
 
@@ -100,9 +100,9 @@ export class Board {
             const swapIndex = index + offset;
             [gemsPositions[index], gemsPositions[swapIndex]] = [gemsPositions[swapIndex], gemsPositions[index]];
 
-            let matches = this.getMatches(gemsPositions)
+            const matches = this.getMatches(gemsPositions)
             if (matches.length > 0) {
-                let name: string = gemsPositions[matches[0][1] * this.width + matches[0][0]]!
+                const name: string = gemsPositions[matches[0][1] * this.width + matches[0][0]]!
                 if (this.gemsPositions[index] == name) {
                   return [index, index + offset];
                 } else {
@@ -115,13 +115,13 @@ export class Board {
 
     const directions = Math.round(Math.random()) === 0 ? ['x', 'y'] : ['y', 'x'] // 1 for horizontal, width for vertical
 
-    for (let direction of directions) {
-      let resultIndexes = checkSwaps(direction);
+    for (const direction of directions) {
+      const resultIndexes = checkSwaps(direction);
       if (resultIndexes) {
         return resultIndexes.map((index) => {
-          let x = index % this.width;
-          let y = Math.floor(index / this.width);
-          let name: string = this.getGem(x, y)!
+          const x = index % this.width;
+          const y = Math.floor(index / this.width);
+          const name: string = this.getGem(x, y)!
           return { x, y, name }
         })
       }
