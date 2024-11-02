@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "main": "./dist/game-manager.js",
   "types": "./dist/game-manager.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JetFlynn/match3preloader"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "dev": "vite",
+    "build:playground": "vite build"
   },
   "devDependencies": {
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vite": "^4.3.9"
   }
 }
