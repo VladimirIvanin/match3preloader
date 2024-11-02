@@ -28,10 +28,25 @@ export class Board {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) { return; }
     this.gemsPositions[y * this.width + x] = gem;
   }
-  recalculatePositions() {
-    for(let i = 0; i < this.width * this.height; i++) {
-      const gem = this.gems[Math.floor(Math.random() * this.gems.length)];
-      this.gemsPositions[this.width * this.height + i] = gem;
+  makeZeroMatches() : void {
+    this.recalculatePositions();
+    if (this.getMatches().length > 0) {
+      this.sliceMatches();
+      this.makeZeroMatches();
+    } else {
+      this.gemsPositions.forEach((_, index) => {
+        this.gemsPositions[index + this.width * this.height] = this.gemsPositions[index]
+        this.gemsPositions[index] = undefined
+      })
+      this.recalculatePositions(true)
+    }
+  }
+  recalculatePositions(precalculated?: boolean) : void {
+    if (!precalculated) {
+      for(let i = 0; i < this.width * this.height; i++) {
+        const gem = this.gems[Math.floor(Math.random() * this.gems.length)];
+        this.gemsPositions[this.width * this.height + i] = gem;
+      }
     }
     this.gemsFallHeight = [];
 

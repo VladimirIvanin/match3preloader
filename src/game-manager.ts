@@ -29,7 +29,10 @@ const BOARD_HEIGHT = 5;
 const HELP_THRESHOLD = 5;
 
 type Callbacks = {
-  scoreUpdate: ((score: number) => void) | undefined
+  scoreUpdate?: ((score: number) => void)
+}
+type Options = {
+  zeroScoreStart?: boolean
 }
 
 export default class GameManager {
@@ -40,13 +43,15 @@ export default class GameManager {
   private canvasService: CanvasService
   private firstPlayerPhase: boolean
   private callbacks: Callbacks
-  constructor(selector: string, options?: object, callbacks?: Callbacks) {
+  private zeroScoreStart: boolean
+  constructor(selector: string, options?: Options, callbacks?: Callbacks) {
     this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
-    this.canvasService = new CanvasService(selector, BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO);
-    this.active = false
-    this.score = 0
-    this.playerInactiveTime = 0
-    this.firstPlayerPhase = true
+    this.canvasService = new CanvasService(selector, BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO);;
+    this.active = false;
+    this.score = 0;
+    this.playerInactiveTime = 0;
+    this.firstPlayerPhase = true;
+    this.zeroScoreStart = !!options?.zeroScoreStart;
     this.callbacks = {
       scoreUpdate: callbacks?.scoreUpdate
     }
@@ -55,8 +60,11 @@ export default class GameManager {
     if (this.active) { return; }
     this.firstPlayerPhase = true
     this.active = true
+    if (this.zeroScoreStart) {
+      this.board.makeZeroMatches()
+    }
     this.canvasService.loadAssets().then(() => {
-      this.dropPhase()
+      this.dropPhase(this.zeroScoreStart)
     })
   }
   stop() {
@@ -75,8 +83,8 @@ export default class GameManager {
       this.callbacks.scoreUpdate(this.score);
     }
   }
-  private dropPhase() {
-    this.board.recalculatePositions();
+  private dropPhase(precalculated?: boolean) {
+    if (!precalculated) { this.board.recalculatePositions(); }
 
     let startTime: number = 0;
     const animate = (timeStamp: number) => {
