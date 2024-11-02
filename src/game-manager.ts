@@ -37,7 +37,7 @@ type Options = {
 
 export default class GameManager {
   score: number
-  playerInactiveTime: Number
+  playerInactiveTime: number
   private active: boolean
   private board: Board
   private canvasService: CanvasService
@@ -263,7 +263,11 @@ export default class GameManager {
     this.board.setGem(activeGemX, activeGemY, secondGem);
     this.board.setGem(targetGemX, targetGemY, firstGem);
 
-    const animation = (timeFuction: Function, collback: Function, animationLength: number) => {
+    const animation = (
+      timeFuction: (timePercent: number) => [number, number],
+      callback: () => void,
+      animationLength: number
+    ) => {
       let startTime: number = 0;
       const animate = (timeStamp: number) => {
         if (startTime === 0) { startTime = timeStamp; }
@@ -280,7 +284,7 @@ export default class GameManager {
         this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem, 0.9 * (1 + tRot / 10));
 
         if (timePercent >= 1) {
-          collback();
+          callback();
         } else {
           this.nextTick(animate);
         }
@@ -289,8 +293,8 @@ export default class GameManager {
     }
 
     if (this.board.getMatches().length > 0) {
-      animation((timePercent: number) => {
-        const arr: number[] = []
+      animation((timePercent: number): [number, number] => {
+        const arr: [number, number] = [0, 0];
         if (timePercent <= 0.5) {
           arr[0] = timePercent;
           arr[1] = timePercent * 2;
@@ -298,13 +302,13 @@ export default class GameManager {
           arr[0] = timePercent;
           arr[1] = (0.5 - (timePercent - 0.5)) * 2;
         }
-        return arr
+        return arr;
       }, () => {
         this.explosionPhase();
       }, 300);
     } else {
-      animation((timePercent: number) => {
-        const arr: number[] = []
+      animation((timePercent: number): [number, number] => {
+        const arr: [number, number] = [0, 0];
         if (timePercent <= 0.25) {
           arr[0] = timePercent * 2;
           arr[1] = timePercent * 4;
@@ -318,7 +322,7 @@ export default class GameManager {
           arr[0] = (0.5 - (timePercent - 0.5)) * 2;
           arr[1] = (0.25 - (timePercent - 0.75)) * 4;
         }
-        return arr
+        return arr;
       }, () => {
         this.board.setGem(activeGemX, activeGemY, firstGem);
         this.board.setGem(targetGemX, targetGemY, secondGem);
