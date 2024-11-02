@@ -7,10 +7,12 @@ import Match3Preloader from 'match3preloader'
 
 let match3 = new Match3Preloader(
   '#canvas',
-  {},
   {
-    scoreUpdate: (newValue: number) => {
-        console.log(newValue)
+    zeroScoreStart: true
+  },
+  {
+    scoreUpdate: (score) => {
+        console.log(score)
     }
   }
 );
