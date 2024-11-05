@@ -28,6 +28,25 @@ export class Board {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) { return; }
     this.gemsPositions[y * this.width + x] = gem;
   }
+  forEachGem(callback: (x: number, y: number, gem: string) => void): void {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const gem = this.getGem(x, y);
+        if (gem !== undefined) {
+          callback(x, y, gem);
+        }
+      }
+    }
+  }
+  swapGems(x1: number, y1: number, x2: number, y2: number): void {
+    const gem1 = this.getGem(x1, y1);
+    const gem2 = this.getGem(x2, y2);
+  
+    if (gem1 !== undefined && gem2 !== undefined) {
+      this.setGem(x1, y1, gem2);
+      this.setGem(x2, y2, gem1);
+    }
+  }
   makeZeroMatches() : void {
     this.recalculatePositions();
 
