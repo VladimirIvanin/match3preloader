@@ -17,6 +17,12 @@ const HELP_THRESHOLD = 5;
 const ANIMATION_LENGTH = 300;
 const HAND_ANIMATION_LENGTH = 1200;
 
+type Gem = {
+  x: number;
+  y: number;
+  name: string;
+};
+
 type Callbacks = {
   scoreUpdate?: (score: number) => void;
 }
@@ -84,26 +90,30 @@ export default class GameManager {
 
   private dropPhase(precalculated = false) {
     if (!precalculated) this.board.recalculatePositions();
-
+  
     let startTime = 0;
     const animate = (timeStamp: number) => {
       if (startTime === 0) startTime = timeStamp;
       const timeCounter = (timeStamp - startTime) / 150;
       let offset = 0.1;
       let animationFinished = true;
-
+  
       this.canvasService.clear();
       this.board.forEachGem((x, y, gem) => {
         if (!gem) return;
-
+  
         const timeline = Math.max(timeCounter - offset, 0);
         const height = Math.max(this.board.getGemFallHeight(x, y) - timeline, 0);
         if (height > 0) animationFinished = false;
         this.canvasService.drawGem(x, y + height, gem);
         offset += 0.1 * y;
       });
-
-      animationFinished ? this.explosionPhase() : this.nextTick(animate);
+  
+      if (animationFinished) {
+        this.explosionPhase();
+      } else {
+        this.nextTick(animate);
+      }
     };
     this.nextTick(animate);
   }
@@ -113,13 +123,17 @@ export default class GameManager {
     const animate = (timeStamp: number) => {
       if (startTime === 0) startTime = timeStamp;
       const timePercent = Math.max((ANIMATION_LENGTH + startTime - timeStamp) / ANIMATION_LENGTH, 0);
-
+  
       this.canvasService.clear();
       this.board.forEachGem((x, y, gem) => {
         this.canvasService.drawGem(x, y, gem, 0.9 * timePercent);
       });
-
-      timePercent === 0 ? this.resetAndDrop() : this.nextTick(animate);
+  
+      if (timePercent === 0) {
+        this.resetAndDrop();
+      } else {
+        this.nextTick(animate);
+      }
     };
     this.nextTick(animate);
   }
@@ -149,7 +163,11 @@ export default class GameManager {
         if (gem) this.canvasService.drawGem(x, y, gem, 0.9 * timePercent);
       });
 
-      timePercent === 0 ? this.handleExplosionEnd() : this.nextTick(animate);
+      if (timePercent === 0) {
+        this.handleExplosionEnd();
+      } else {
+        this.nextTick(animate);
+      }
     };
     this.nextTick(animate);
   }
@@ -172,7 +190,7 @@ export default class GameManager {
     let helpStartTime = 0;
   
     const listen = (timeStamp: number) => {
-      this.updateInactiveTime(helpTimer);
+      playerInactiveTime += Date.now() - helpTimer;
       helpTimer = Date.now();
   
       if (!showHelp && playerInactiveTime > HELP_THRESHOLD * 1000) {
@@ -183,30 +201,29 @@ export default class GameManager {
       this.renderPlayerPhase(timeStamp, possibleMatches, showHelp, helpStartTime);
   
       if (this.shouldExchangeGems()) {
-        this.handleGemExchange(possibleMatches);
+        this.handleGemExchange();
       } else {
         this.nextTick(listen);
       }
     };
     this.nextTick(listen);
   }
-
   private updateInactiveTime(helpTimer: number) {
     this.playerInactiveTime += Date.now() - helpTimer;
   }
 
-  private renderPlayerPhase(timeStamp: number, possibleMatches: any, showHelp: boolean, helpStartTime: number) {
+  private renderPlayerPhase(timeStamp: number, possibleMatches: Gem[], showHelp: boolean, helpStartTime: number) {
     const { hoverGemX, hoverGemY } = this.inputService;
     this.canvasService.clear();
-    const exceptions = hoverGemX != undefined && hoverGemY != undefined ? [[hoverGemX, hoverGemY]] : undefined;
+    const exceptions = hoverGemX !== undefined && hoverGemY !== undefined ? [[hoverGemX, hoverGemY]] : undefined;
     this.canvasService.drawBoard(this.board, exceptions);
-
+  
     if (showHelp) this.renderHelp(timeStamp, helpStartTime, possibleMatches);
     if (hoverGemX !== undefined && hoverGemY !== undefined) this.renderHoverGem(hoverGemX, hoverGemY);
     if (this.firstPlayerPhase) this.renderHand(timeStamp, possibleMatches);
   }
 
-  private renderHelp(timeStamp: number, helpStartTime: number, possibleMatches: any) {
+  private renderHelp(timeStamp: number, helpStartTime: number, possibleMatches: Gem[]) {
     const timePercent = this.calculateAnimationPercent(timeStamp - helpStartTime, ANIMATION_LENGTH);
     const nextGem = possibleMatches[0];
     this.canvasService.drawGem(nextGem.x, nextGem.y, nextGem.name, 0.9 + 0.1 * timePercent);
@@ -219,7 +236,7 @@ export default class GameManager {
     }
   }
 
-  private renderHand(timeStamp: number, possibleMatches: any) {
+  private renderHand(timeStamp: number, possibleMatches: Gem[]) {
     const timePercent = this.calculateAnimationPercent(timeStamp, HAND_ANIMATION_LENGTH);
     const [start, end] = possibleMatches;
     const diffx = end.x - start.x;
@@ -239,7 +256,7 @@ export default class GameManager {
           activeGemX !== undefined && activeGemY !== undefined;
   }
 
-  private handleGemExchange(possibleMatches: any) {
+  private handleGemExchange() {
     const { hoverGemX, hoverGemY, activeGemX, activeGemY } = this.inputService;
     let targetGemX: number, targetGemY: number;
 
@@ -260,68 +277,32 @@ export default class GameManager {
   }
 
   private gemMovePhase(targetGemX: number, targetGemY: number, activeGemX: number, activeGemY: number) {
-    const firstGem = this.board.getGem(activeGemX, activeGemY);
-    const secondGem = this.board.getGem(targetGemX, targetGemY);
-    if (firstGem === undefined || secondGem === undefined) {
+    const [firstGem, secondGem] = this.getGemsForSwap(activeGemX, activeGemY, targetGemX, targetGemY);
+    
+    if (!this.areValidGems(firstGem, secondGem)) {
       this.playerPhase();
       return;
     }
   
-    this.board.setGem(activeGemX, activeGemY, secondGem);
-    this.board.setGem(targetGemX, targetGemY, firstGem);
+    this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
   
-    const animation = (
-      timeFuction: (timePercent: number) => [number, number],
-      callback: () => void,
-      animationLength: number
-    ) => {
-      let startTime: number = 0;
-      const animate = (timeStamp: number) => {
-        if (startTime === 0) { startTime = timeStamp; }
-        const timeCounter = timeStamp - startTime;
-        const timePercent = timeCounter / animationLength;
-        const [tPos, tRot] = timeFuction(timePercent);
+    const animationConfig = this.getGemMoveAnimationConfig(activeGemX, activeGemY, targetGemX, targetGemY);
+    this.animateGemMove(firstGem!, secondGem!, activeGemX, activeGemY, targetGemX, targetGemY, animationConfig);
+  }
+
+  private getGemsForSwap(x1: number, y1: number, x2: number, y2: number): [string | undefined, string | undefined] {
+    return [this.board.getGem(x1, y1), this.board.getGem(x2, y2)];
+  }
   
-        this.canvasService.clear();
-        this.canvasService.drawBoard(this.board, [[activeGemX, activeGemY], [targetGemX, targetGemY]]);
-        this.canvasService.drawGem(targetGemX + (activeGemX - targetGemX) * tPos, targetGemY + (activeGemY - targetGemY) * tPos, secondGem, 0.9 * (1 - tRot / 5));
-        this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem, 0.9 * (1 + tRot / 10));
+  private areValidGems(gem1: string | undefined, gem2: string | undefined): boolean {
+    return gem1 !== undefined && gem2 !== undefined;
+  }
   
-        if (timePercent >= 1) {
-          callback();
-        } else {
-          this.nextTick(animate);
-        }
-      }
-      this.nextTick(animate);
-    }
-  
+  private getGemMoveAnimationConfig(activeGemX: number, activeGemY: number, targetGemX: number, targetGemY: number) {
     if (this.board.getMatches().length > 0) {
-      animation((timePercent: number): [number, number] => {
-        if (timePercent <= 0.5) {
-          return [timePercent, timePercent * 2];
-        } else {
-          return [timePercent, (0.5 - (timePercent - 0.5)) * 2];
-        }
-      }, () => {
-        this.explosionPhase();
-      }, 300);
+      return this.getMatchAnimationConfig();
     } else {
-      animation((timePercent: number): [number, number] => {
-        if (timePercent <= 0.25) {
-          return [timePercent * 2, timePercent * 4];
-        } else if (timePercent <= 0.5) {
-          return [timePercent * 2, (0.25 - (timePercent - 0.25)) * 4];
-        } else if (timePercent <= 0.75) {
-          return [(0.5 - (timePercent - 0.5)) * 2, (timePercent - 0.5) * 4];
-        } else {
-          return [(0.5 - (timePercent - 0.5)) * 2, (0.25 - (timePercent - 0.75)) * 4];
-        }
-      }, () => {
-        this.board.setGem(activeGemX, activeGemY, firstGem);
-        this.board.setGem(targetGemX, targetGemY, secondGem);
-        this.playerPhase();
-      }, 600);
+      return this.getNoMatchAnimationConfig(activeGemX, activeGemY, targetGemX, targetGemY);
     }
   }
 
