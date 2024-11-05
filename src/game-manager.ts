@@ -285,12 +285,12 @@ export default class GameManager {
       return;
     }
   
-    this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
+    const hasMatches = this.board.getMatches().length > 0;
+    const animationConfig = this.getGemMoveAnimationConfig(hasMatches);
   
-    const animationConfig = this.getGemMoveAnimationConfig();
     this.animateGemMove(firstGem!, secondGem!, activeGemX, activeGemY, targetGemX, targetGemY, animationConfig);
-  } 
-
+  }
+  
   private getGemsForSwap(x1: number, y1: number, x2: number, y2: number): [string | undefined, string | undefined] {
     return [this.board.getGem(x1, y1), this.board.getGem(x2, y2)];
   }
@@ -299,34 +299,29 @@ export default class GameManager {
     return gem1 !== undefined && gem2 !== undefined;
   }
   
-  private getGemMoveAnimationConfig() {
-    const hasMatches = this.board.getMatches().length > 0;
+  private getGemMoveAnimationConfig(hasMatches: boolean) {
     return {
       duration: hasMatches ? 300 : 600,
       timingFunction: hasMatches ? this.matchSwapTiming : this.noMatchSwapTiming
     };
   }
-
+  
   private matchSwapTiming(timePercent: number): [number, number] {
-    if (timePercent <= 0.5) {
-      return [timePercent, 0];
-    } else {
-      return [timePercent, 0];
-    }
+    return [timePercent, 0];
   }
   
   private noMatchSwapTiming(timePercent: number): [number, number] {
     if (timePercent <= 0.25) {
-      return [timePercent * 2, 0];
+      return [timePercent * 2, timePercent * 4];
     } else if (timePercent <= 0.5) {
-      return [timePercent * 2, 0];
+      return [timePercent * 2, (0.25 - (timePercent - 0.25)) * 4];
     } else if (timePercent <= 0.75) {
-      return [(0.5 - (timePercent - 0.5)) * 2, 0];
+      return [(0.5 - (timePercent - 0.5)) * 2, (timePercent - 0.5) * 4];
     } else {
-      return [(0.5 - (timePercent - 0.5)) * 2, 0];
+      return [(0.5 - (timePercent - 0.5)) * 2, (0.25 - (timePercent - 0.75)) * 4];
     }
   }
-
+  
   private animateGemMove(
     firstGem: string,
     secondGem: string,
@@ -341,27 +336,29 @@ export default class GameManager {
       if (startTime === 0) startTime = timeStamp;
       const timeCounter = timeStamp - startTime;
       const timePercent = Math.min(timeCounter / config.duration, 1);
-      const [tPos] = config.timingFunction(timePercent);
-
+      const [tPos, tRot] = config.timingFunction(timePercent);
+  
       this.canvasService.clear();
       this.canvasService.drawBoard(this.board, [[activeGemX, activeGemY], [targetGemX, targetGemY]]);
-      this.canvasService.drawGem(targetGemX + (activeGemX - targetGemX) * tPos, targetGemY + (activeGemY - targetGemY) * tPos, secondGem);
-      this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem);
-
+      this.canvasService.drawGem(targetGemX + (activeGemX - targetGemX) * tPos, targetGemY + (activeGemY - targetGemY) * tPos, secondGem, 0.9 * (1 - tRot / 5));
+      this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem, 0.9 * (1 + tRot / 10));
+  
       if (timePercent >= 1) {
-        this.handleGemMoveEnd(this.board.getMatches().length > 0);
+        this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
+        const hasMatches = this.board.getMatches().length > 0;
+        this.handleGemMoveEnd(hasMatches, activeGemX, activeGemY, targetGemX, targetGemY);
       } else {
         this.nextTick(animate);
       }
     };
     this.nextTick(animate);
   }
-
-  private handleGemMoveEnd(hasMatches: boolean) {
+  
+  private handleGemMoveEnd(hasMatches: boolean, activeGemX: number, activeGemY: number, targetGemX: number, targetGemY: number) {
     if (hasMatches) {
       this.explosionPhase();
     } else {
-      this.board.swapGems(this.inputService.activeGemX!, this.inputService.activeGemY!, this.inputService.hoverGemX!, this.inputService.hoverGemY!);
+      this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
       this.playerPhase();
     }
   }
