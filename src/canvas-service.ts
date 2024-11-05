@@ -10,6 +10,11 @@ type GemInfo = {
   image: HTMLImageElement
 }
 
+type GemPosition = {
+  x: number,
+  y: number
+}
+
 export class CanvasService {
   ctx: CanvasRenderingContext2D
   canvas: HTMLCanvasElement
@@ -18,11 +23,6 @@ export class CanvasService {
   boardHeight: number
   gems_images: Record<string, HTMLImageElement>
   handImage: HTMLImageElement
-  hoverGemX: number | undefined
-  hoverGemY: number | undefined
-  activeGemX: number | undefined
-  activeGemY: number | undefined
-  isGemExchange: boolean
 
   constructor(selector: string, width: number, height: number, gems_info: GemInfo[]) {
     this.canvas = document.querySelector<HTMLCanvasElement>(selector)!;
@@ -37,28 +37,8 @@ export class CanvasService {
     this.gems_info = gems_info;
     this.gems_images = {};
     this.handImage = new Image();
-    this.isGemExchange = false;
-
-    this.canvas.addEventListener('mousemove', (event) => {
-      const rect = this.canvas.getBoundingClientRect();
-      this.hoverGemX = Math.floor((event.clientX - rect.left) / (CANVAS_SCALE * CELL_SIZE));
-      this.hoverGemY = this.boardHeight - 1 - Math.floor((event.clientY - rect.top) / (CANVAS_SCALE * CELL_SIZE));
-    });
-
-    this.canvas.addEventListener('mouseout', () => {
-      this.hoverGemX = undefined;
-      this.hoverGemY = undefined;
-    });
-
-    this.canvas.addEventListener('mousedown', () => {
-      this.activeGemX = this.hoverGemX;
-      this.activeGemY = this.hoverGemY;
-      this.isGemExchange = true;
-    });
-
-    this.canvas.addEventListener('mouseup', () => {
-    });
   }
+
   drawHand(x: number, y: number) {
     const scale = 0.8;
     const margin = (1 - scale) / 2;
@@ -102,5 +82,11 @@ export class CanvasService {
       this.handImage.onload = () => { resolve(); };
     }));
     return Promise.all(promiseList);
+  }
+  getCanvasGem(eventX: number, eventY: number) : GemPosition {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.floor((eventX - rect.left) / (CANVAS_SCALE * CELL_SIZE));
+    const y = this.boardHeight - 1 - Math.floor((eventY - rect.top) / (CANVAS_SCALE * CELL_SIZE));
+    return {x, y}
   }
 }

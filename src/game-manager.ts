@@ -1,5 +1,6 @@
 import { Board } from './board';
 import { CanvasService } from './canvas-service';
+import { InputService } from './input-service';
 import images from './images'
 
 const GEMS_INFO = [
@@ -38,12 +39,14 @@ export default class GameManager {
   private active: boolean
   private board: Board
   private canvasService: CanvasService
+  private inputService: InputService
   private firstPlayerPhase: boolean
   private callbacks: Callbacks
   private lastFrame: ((timeStamp: number) => void) | undefined
   constructor(selector: string, options?: object, callbacks?: Callbacks) {
     this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
     this.canvasService = new CanvasService(selector, BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO);;
+    this.inputService = new InputService(this.canvasService);
     this.active = false;
     this.score = 0;
     this.playerInactiveTime = 0;
@@ -202,10 +205,10 @@ export default class GameManager {
         helpStartTime = timeStamp;
       }
 
-      const hoverGemX: number | undefined = this.canvasService.hoverGemX;
-      const hoverGemY: number | undefined = this.canvasService.hoverGemY;
-      const activeGemX: number | undefined = this.canvasService.activeGemX;
-      const activeGemY: number | undefined = this.canvasService.activeGemY;
+      const hoverGemX: number | undefined = this.inputService.hoverGemX;
+      const hoverGemY: number | undefined = this.inputService.hoverGemY;
+      const activeGemX: number | undefined = this.inputService.activeGemX;
+      const activeGemY: number | undefined = this.inputService.activeGemY;
       this.canvasService.clear();
       const exceptions = hoverGemX != undefined && hoverGemY != undefined ? [[hoverGemX, hoverGemY]] : undefined;
       this.canvasService.drawBoard(this.board, exceptions);
@@ -236,7 +239,7 @@ export default class GameManager {
         const diffy = possibleMatches[1].y - possibleMatches[0].y;
         this.canvasService.drawHand(possibleMatches[0].x + diffx * timePercent, possibleMatches[0].y + diffy * timePercent);
       }
-      if (this.canvasService.isGemExchange && hoverGemX !== undefined && hoverGemY !== undefined && activeGemX !== undefined && activeGemY !== undefined) {
+      if (this.inputService.isGemExchange && hoverGemX !== undefined && hoverGemY !== undefined && activeGemX !== undefined && activeGemY !== undefined) {
         let targetGemX: number, targetGemY: number
         if (Math.abs(hoverGemX - activeGemX) != Math.abs(hoverGemY - activeGemY)) {
           if (Math.abs(hoverGemX - activeGemX) > Math.abs(hoverGemY - activeGemY)) {
@@ -246,11 +249,7 @@ export default class GameManager {
             targetGemX = activeGemX;
             targetGemY = activeGemY - Math.sign(activeGemY - hoverGemY);
           }
-          this.canvasService.hoverGemX = undefined;
-          this.canvasService.hoverGemY = undefined;
-          this.canvasService.activeGemX = undefined;
-          this.canvasService.activeGemY = undefined;
-          this.canvasService.isGemExchange = false;
+          this.inputService.clearGems()
 
           this.firstPlayerPhase = false;
           this.gemMovePhase(targetGemX, targetGemY, activeGemX, activeGemY);
