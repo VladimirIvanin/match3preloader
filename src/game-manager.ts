@@ -217,10 +217,10 @@ export default class GameManager {
     this.canvasService.clear();
     const exceptions = hoverGemX !== undefined && hoverGemY !== undefined ? [[hoverGemX, hoverGemY]] : undefined;
     this.canvasService.drawBoard(this.board, exceptions);
-  
+    
     if (showHelp) this.renderHelp(timeStamp, helpStartTime, possibleMatches);
     if (hoverGemX !== undefined && hoverGemY !== undefined) this.renderHoverGem(hoverGemX, hoverGemY);
-    if (this.firstPlayerPhase) this.renderHand(timeStamp, possibleMatches);
+    if (this.firstPlayerPhase && !this.inputService.isGemExchange) this.renderHand(timeStamp, possibleMatches);
   }
 
   private renderHelp(timeStamp: number, helpStartTime: number, possibleMatches: Gem[]) {
@@ -271,6 +271,7 @@ export default class GameManager {
       this.inputService.clearGems();
       this.firstPlayerPhase = false;
       this.gemMovePhase(targetGemX, targetGemY, activeGemX!, activeGemY!);
+      this.inputService.isGemExchange = false;
     } else {
       this.nextTick(this.playerPhase.bind(this));
     }
