@@ -30,16 +30,17 @@ export class Board {
   }
   makeZeroMatches() : void {
     this.recalculatePositions();
-    if (this.getMatches().length > 0) {
-      this.sliceMatches();
-      this.makeZeroMatches();
-    } else {
-      this.gemsPositions.forEach((_, index) => {
-        this.gemsPositions[index + this.width * this.height] = this.gemsPositions[index]
-        this.gemsPositions[index] = undefined
-      })
-      this.recalculatePositions(true)
+
+    while (this.getMatches().length > 0 || !this.getPossibleMatch()) {
+      this.clearBoard();
+      this.recalculatePositions();
     }
+
+    this.gemsPositions.forEach((_, index) => {
+      this.gemsPositions[index + this.width * this.height] = this.gemsPositions[index]
+      this.gemsPositions[index] = undefined
+    })
+    this.recalculatePositions(true)
   }
   recalculatePositions(precalculated?: boolean) : void {
     if (!precalculated) {

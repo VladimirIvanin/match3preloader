@@ -31,9 +31,6 @@ const HELP_THRESHOLD = 5;
 type Callbacks = {
   scoreUpdate?: ((score: number) => void)
 }
-type Options = {
-  zeroScoreStart?: boolean
-}
 
 export default class GameManager {
   score: number
@@ -43,39 +40,52 @@ export default class GameManager {
   private canvasService: CanvasService
   private firstPlayerPhase: boolean
   private callbacks: Callbacks
-  private zeroScoreStart: boolean
-  constructor(selector: string, options?: Options, callbacks?: Callbacks) {
+  private lastFrame: ((timeStamp: number) => void) | undefined
+  constructor(selector: string, options?: object, callbacks?: Callbacks) {
     this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
     this.canvasService = new CanvasService(selector, BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO);;
     this.active = false;
     this.score = 0;
     this.playerInactiveTime = 0;
     this.firstPlayerPhase = true;
-    this.zeroScoreStart = !!options?.zeroScoreStart;
     this.callbacks = {
       scoreUpdate: callbacks?.scoreUpdate
     }
+    this.lastFrame = undefined
   }
   start() {
     if (this.active) { return; }
     this.firstPlayerPhase = true
     this.active = true
-    if (this.zeroScoreStart) {
-      this.board.makeZeroMatches()
-    }
+    this.board.makeZeroMatches()
     this.canvasService.loadAssets().then(() => {
-      this.dropPhase(this.zeroScoreStart)
+      this.dropPhase(true)
     })
   }
   stop() {
     this.active = false
     requestAnimationFrame((_timeStamp) => {
+      this.lastFrame = undefined;
       this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
-      this.score = 0
-      this.playerInactiveTime = 0
-      this.firstPlayerPhase = true
+      this.score = 0;
+      this.playerInactiveTime = 0;
+      this.firstPlayerPhase = true;
       this.canvasService.clear();
     });
+  }
+  pause() {
+    this.active = false
+    requestAnimationFrame((_timeStamp) => {
+      this.canvasService.clear();
+    });
+  }
+  resume() {
+    if (this.active || !this.lastFrame) {
+      return;
+    }
+    this.active = true;
+    requestAnimationFrame(this.lastFrame);
+    this.lastFrame = undefined
   }
   private addScore(addition: number) {
     this.score += addition
@@ -331,7 +341,10 @@ export default class GameManager {
     }
   }
   private nextTick(fn: (timeStamp: number) => void) {
-    if (!this.active) { return }
+    if (!this.active) {
+      this.lastFrame = fn;
+      return
+    }
     requestAnimationFrame(fn);
   }
 }
