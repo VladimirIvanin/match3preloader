@@ -165,25 +165,25 @@ export default class GameManager {
       this.restartPhase();
       return;
     }
-
+  
     let helpTimer = Date.now();
     let playerInactiveTime = 0;
     let showHelp = false;
     let helpStartTime = 0;
-
+  
     const listen = (timeStamp: number) => {
       this.updateInactiveTime(helpTimer);
       helpTimer = Date.now();
-
+  
       if (!showHelp && playerInactiveTime > HELP_THRESHOLD * 1000) {
         showHelp = true;
         helpStartTime = timeStamp;
       }
-
+  
       this.renderPlayerPhase(timeStamp, possibleMatches, showHelp, helpStartTime);
-
+  
       if (this.shouldExchangeGems()) {
-        this.handleGemExchange();
+        this.handleGemExchange(possibleMatches);
       } else {
         this.nextTick(listen);
       }
@@ -233,50 +233,96 @@ export default class GameManager {
   }
 
   private shouldExchangeGems(): boolean {
-    const { isGemExchange, hoverGemX, hoverGemY, activeGemX, activeGemY } = this.inputService;
+    const { hoverGemX, hoverGemY, activeGemX, activeGemY, isGemExchange } = this.inputService;
     return isGemExchange && 
-           hoverGemX !== undefined && hoverGemY !== undefined && 
-           activeGemX !== undefined && activeGemY !== undefined;
+          hoverGemX !== undefined && hoverGemY !== undefined && 
+          activeGemX !== undefined && activeGemY !== undefined;
   }
 
-  private handleGemExchange() {
+  private handleGemExchange(possibleMatches: any) {
     const { hoverGemX, hoverGemY, activeGemX, activeGemY } = this.inputService;
-    if (hoverGemX === undefined || hoverGemY === undefined || activeGemX === undefined || activeGemY === undefined) {
-      return;
+    let targetGemX: number, targetGemY: number;
+
+    if (Math.abs(hoverGemX! - activeGemX!) !== Math.abs(hoverGemY! - activeGemY!)) {
+      if (Math.abs(hoverGemX! - activeGemX!) > Math.abs(hoverGemY! - activeGemY!)) {
+        targetGemX = activeGemX! - Math.sign(activeGemX! - hoverGemX!);
+        targetGemY = activeGemY!;
+      } else {
+        targetGemX = activeGemX!;
+        targetGemY = activeGemY! - Math.sign(activeGemY! - hoverGemY!);
+      }
+      this.inputService.clearGems();
+      this.firstPlayerPhase = false;
+      this.gemMovePhase(targetGemX, targetGemY, activeGemX!, activeGemY!);
+    } else {
+      this.nextTick(this.playerPhase.bind(this));
     }
-
-    const [targetGemX, targetGemY] = this.calculateTargetGem(hoverGemX, hoverGemY, activeGemX, activeGemY);
-    this.inputService.clearGems();
-    this.firstPlayerPhase = false;
-    this.gemMovePhase(targetGemX, targetGemY, activeGemX, activeGemY);
-  }
-
-  private calculateTargetGem(hoverGemX: number, hoverGemY: number, activeGemX: number, activeGemY: number): [number, number] {
-    const dx = Math.abs(hoverGemX - activeGemX);
-    const dy = Math.abs(hoverGemY - activeGemY);
-    if (dx === dy) return [activeGemX, activeGemY];
-
-    return dx > dy
-      ? [activeGemX - Math.sign(activeGemX - hoverGemX), activeGemY]
-      : [activeGemX, activeGemY - Math.sign(activeGemY - hoverGemY)];
   }
 
   private gemMovePhase(targetGemX: number, targetGemY: number, activeGemX: number, activeGemY: number) {
     const firstGem = this.board.getGem(activeGemX, activeGemY);
     const secondGem = this.board.getGem(targetGemX, targetGemY);
-    if (!firstGem || !secondGem) {
+    if (firstGem === undefined || secondGem === undefined) {
       this.playerPhase();
       return;
     }
-
-    this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
-
-    const hasMatches = this.board.getMatches().length > 0;
-    const animationConfig = hasMatches 
-      ? this.getMatchAnimationConfig() 
-      : this.getNoMatchAnimationConfig(activeGemX, activeGemY, targetGemX, targetGemY);
-
-    this.animateGemMove(firstGem, secondGem, activeGemX, activeGemY, targetGemX, targetGemY, animationConfig);
+  
+    this.board.setGem(activeGemX, activeGemY, secondGem);
+    this.board.setGem(targetGemX, targetGemY, firstGem);
+  
+    const animation = (
+      timeFuction: (timePercent: number) => [number, number],
+      callback: () => void,
+      animationLength: number
+    ) => {
+      let startTime: number = 0;
+      const animate = (timeStamp: number) => {
+        if (startTime === 0) { startTime = timeStamp; }
+        const timeCounter = timeStamp - startTime;
+        const timePercent = timeCounter / animationLength;
+        const [tPos, tRot] = timeFuction(timePercent);
+  
+        this.canvasService.clear();
+        this.canvasService.drawBoard(this.board, [[activeGemX, activeGemY], [targetGemX, targetGemY]]);
+        this.canvasService.drawGem(targetGemX + (activeGemX - targetGemX) * tPos, targetGemY + (activeGemY - targetGemY) * tPos, secondGem, 0.9 * (1 - tRot / 5));
+        this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem, 0.9 * (1 + tRot / 10));
+  
+        if (timePercent >= 1) {
+          callback();
+        } else {
+          this.nextTick(animate);
+        }
+      }
+      this.nextTick(animate);
+    }
+  
+    if (this.board.getMatches().length > 0) {
+      animation((timePercent: number): [number, number] => {
+        if (timePercent <= 0.5) {
+          return [timePercent, timePercent * 2];
+        } else {
+          return [timePercent, (0.5 - (timePercent - 0.5)) * 2];
+        }
+      }, () => {
+        this.explosionPhase();
+      }, 300);
+    } else {
+      animation((timePercent: number): [number, number] => {
+        if (timePercent <= 0.25) {
+          return [timePercent * 2, timePercent * 4];
+        } else if (timePercent <= 0.5) {
+          return [timePercent * 2, (0.25 - (timePercent - 0.25)) * 4];
+        } else if (timePercent <= 0.75) {
+          return [(0.5 - (timePercent - 0.5)) * 2, (timePercent - 0.5) * 4];
+        } else {
+          return [(0.5 - (timePercent - 0.5)) * 2, (0.25 - (timePercent - 0.75)) * 4];
+        }
+      }, () => {
+        this.board.setGem(activeGemX, activeGemY, firstGem);
+        this.board.setGem(targetGemX, targetGemY, secondGem);
+        this.playerPhase();
+      }, 600);
+    }
   }
 
   private getMatchAnimationConfig() {
