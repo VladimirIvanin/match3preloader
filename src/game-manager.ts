@@ -286,9 +286,9 @@ export default class GameManager {
   
     this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
   
-    const animationConfig = this.getGemMoveAnimationConfig(activeGemX, activeGemY, targetGemX, targetGemY);
+    const animationConfig = this.getGemMoveAnimationConfig();
     this.animateGemMove(firstGem!, secondGem!, activeGemX, activeGemY, targetGemX, targetGemY, animationConfig);
-  }
+  } 
 
   private getGemsForSwap(x1: number, y1: number, x2: number, y2: number): [string | undefined, string | undefined] {
     return [this.board.getGem(x1, y1), this.board.getGem(x2, y2)];
@@ -298,76 +298,71 @@ export default class GameManager {
     return gem1 !== undefined && gem2 !== undefined;
   }
   
-  private getGemMoveAnimationConfig(activeGemX: number, activeGemY: number, targetGemX: number, targetGemY: number) {
-    if (this.board.getMatches().length > 0) {
-      return this.getMatchAnimationConfig();
+  private getGemMoveAnimationConfig() {
+    const hasMatches = this.board.getMatches().length > 0;
+    return {
+      duration: hasMatches ? 300 : 600,
+      timingFunction: hasMatches ? this.matchSwapTiming : this.noMatchSwapTiming
+    };
+  }
+
+  private matchSwapTiming(timePercent: number): [number, number] {
+    if (timePercent <= 0.5) {
+      return [timePercent, 0];
     } else {
-      return this.getNoMatchAnimationConfig(activeGemX, activeGemY, targetGemX, targetGemY);
+      return [timePercent, 0];
+    }
+  }
+  
+  private noMatchSwapTiming(timePercent: number): [number, number] {
+    if (timePercent <= 0.25) {
+      return [timePercent * 2, 0];
+    } else if (timePercent <= 0.5) {
+      return [timePercent * 2, 0];
+    } else if (timePercent <= 0.75) {
+      return [(0.5 - (timePercent - 0.5)) * 2, 0];
+    } else {
+      return [(0.5 - (timePercent - 0.5)) * 2, 0];
     }
   }
 
-  private getMatchAnimationConfig() {
-    return {
-      duration: 300,
-      timeFuction: (t: number): [number, number] => [t, t <= 0.5 ? t * 2 : (0.5 - (t - 0.5)) * 2],
-      callback: () => this.explosionPhase()
-    };
-  }
-
-  private getNoMatchAnimationConfig(activeGemX: number, activeGemY: number, targetGemX: number, targetGemY: number) {
-    return {
-      duration: 600,
-      timeFuction: (t: number): [number, number] => {
-        if (t <= 0.25) return [t * 2, t * 4];
-        if (t <= 0.5) return [t * 2, (0.25 - (t - 0.25)) * 4];
-        if (t <= 0.75) return [(0.5 - (t - 0.5)) * 2, (t - 0.5) * 4];
-        return [(0.5 - (t - 0.5)) * 2, (0.25 - (t - 0.75)) * 4];
-      },
-      callback: () => {
-        this.board.swapGems(activeGemX, activeGemY, targetGemX, targetGemY);
-        this.playerPhase();
-      }
-    };
-  }
-
   private animateGemMove(
-    firstGem: string, 
-    secondGem: string, 
-    activeGemX: number, 
-    activeGemY: number, 
-    targetGemX: number, 
-    targetGemY: number, 
-    config: { duration: number, timeFuction: (t: number) => [number, number], callback: () => void }
+    firstGem: string,
+    secondGem: string,
+    activeGemX: number,
+    activeGemY: number,
+    targetGemX: number,
+    targetGemY: number,
+    config: { duration: number; timingFunction: (timePercent: number) => [number, number] }
   ) {
     let startTime = 0;
     const animate = (timeStamp: number) => {
       if (startTime === 0) startTime = timeStamp;
-      const timePercent = (timeStamp - startTime) / config.duration;
-
-      const [tPos, tRot] = config.timeFuction(timePercent);
+      const timeCounter = timeStamp - startTime;
+      const timePercent = Math.min(timeCounter / config.duration, 1);
+      const [tPos] = config.timingFunction(timePercent);
 
       this.canvasService.clear();
       this.canvasService.drawBoard(this.board, [[activeGemX, activeGemY], [targetGemX, targetGemY]]);
-      this.canvasService.drawGem(
-        targetGemX + (activeGemX - targetGemX) * tPos, 
-        targetGemY + (activeGemY - targetGemY) * tPos, 
-        secondGem, 
-        0.9 * (1 - tRot / 5)
-      );
-      this.canvasService.drawGem(
-        activeGemX + (targetGemX - activeGemX) * tPos, 
-        activeGemY + (targetGemY - activeGemY) * tPos, 
-        firstGem, 
-        0.9 * (1 + tRot / 0.9 * (1 + tRot / 10))
-      );
+      this.canvasService.drawGem(targetGemX + (activeGemX - targetGemX) * tPos, targetGemY + (activeGemY - targetGemY) * tPos, secondGem);
+      this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem);
 
       if (timePercent >= 1) {
-        config.callback();
+        this.handleGemMoveEnd(this.board.getMatches().length > 0);
       } else {
         this.nextTick(animate);
       }
-    }
+    };
     this.nextTick(animate);
+  }
+
+  private handleGemMoveEnd(hasMatches: boolean) {
+    if (hasMatches) {
+      this.explosionPhase();
+    } else {
+      this.board.swapGems(this.inputService.activeGemX!, this.inputService.activeGemY!, this.inputService.hoverGemX!, this.inputService.hoverGemY!);
+      this.playerPhase();
+    }
   }
 
   private nextTick(callback: (timeStamp: number) => void) {
