@@ -9,4 +9,3 @@ export type GemInfo = {
   src: string,
   image: HTMLImageElement
 }
-export type GemsInfo = GemInfo[]

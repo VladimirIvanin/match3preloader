@@ -1,10 +1,10 @@
 import { Board } from './board';
 import { CanvasService } from './canvas-service';
 import { InputService } from './input-service';
-import { Gem, GemsInfo } from './types'
+import { Gem, GemInfo } from './types'
 import images from './images'
 
-const GEMS_INFO: GemsInfo = [
+const GEMS_INFO: GemInfo[] = [
   { name: "mails",
     src: images.mails,
     image: new Image()
