@@ -26,6 +26,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'error',
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-call': 'error',
+      "@typescript-eslint/explicit-function-return-type": "warn",
       'no-undef': 'error',
       'no-unreachable': 'error',
     },

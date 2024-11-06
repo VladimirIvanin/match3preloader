@@ -1,4 +1,5 @@
 import { CanvasService } from './canvas-service';
+import { Gem } from './types'
 
 type EventMethods = {
   handleMouseMove: (event: MouseEvent) => void,
@@ -14,10 +15,8 @@ export class InputService {
   mouseEvents: boolean
   isGemExchange: boolean
 
-  hoverGemX: number | undefined
-  hoverGemY: number | undefined
-  activeGemX: number | undefined
-  activeGemY: number | undefined
+  hoverGem: Gem | undefined
+  activeGem: Gem | undefined
   eventMethods: EventMethods
 
   constructor(canvasService: CanvasService) {
@@ -25,10 +24,8 @@ export class InputService {
     this.mouseEvents = true
     this.isGemExchange = false
 
-    this.hoverGemX = undefined
-    this.hoverGemY = undefined
-    this.activeGemX = undefined
-    this.activeGemY = undefined
+    this.hoverGem = undefined;
+    this.activeGem = undefined;
 
     this.eventMethods = {
       handleMouseMove: this.handleMouseMove.bind(this),
@@ -47,15 +44,13 @@ export class InputService {
     this.canvasService.canvas.addEventListener('touchend', this.eventMethods.handleTouchEnd);
   }
 
-  clearGems() {
-    this.activeGemX = undefined;
-    this.activeGemY = undefined;
-    this.hoverGemX = undefined;
-    this.hoverGemY = undefined;
+  clearGems(): void {
+    this.hoverGem = undefined;
+    this.activeGem = undefined;
     this.isGemExchange = false;
   }
 
-  destroy() {
+  destroy(): void {
     this.canvasService.canvas.removeEventListener('mousemove', this.eventMethods.handleMouseMove);
     this.canvasService.canvas.removeEventListener('mouseout', this.eventMethods.handleMouseOut);
     this.canvasService.canvas.removeEventListener('mousedown', this.eventMethods.handleMouseDown);
@@ -64,53 +59,50 @@ export class InputService {
     this.canvasService.canvas.removeEventListener('touchend', this.eventMethods.handleTouchEnd);
   }
 
-  private handleMouseMove(event: MouseEvent) : void {
+  private handleMouseMove(event: MouseEvent): void {
     if (!this.mouseEvents) { return; }
 
-    const gemPosition = this.canvasService.getCanvasGem(event.clientX, event.clientY)
-    this.hoverGemX = gemPosition.x
-    this.hoverGemY = gemPosition.y
+    this.hoverGem = this.canvasService.getCanvasGem(event.clientX, event.clientY)
   }
 
-  private handleMouseOut() : void {
+  private handleMouseOut(): void {
     if (!this.mouseEvents) { return; }
 
-    this.hoverGemX = undefined;
-    this.hoverGemY = undefined;
+    this.hoverGem = undefined;
   }
 
-  private handleMouseDown() : void {
+  private handleMouseDown(): void {
     if (!this.mouseEvents) { return; }
 
-    this.activeGemX = this.hoverGemX;
-    this.activeGemY = this.hoverGemY;
+    this.activeGem = this.hoverGem;
     this.isGemExchange = true;
   }
 
-  private handleTouchStart(event: TouchEvent) : void {
-    const gemPosition = this.canvasService.getCanvasGem(event.touches[0].clientX, event.touches[0].clientY)
-    this.hoverGemX = gemPosition.x;
-    this.hoverGemY = gemPosition.y;
+  private handleTouchStart(event: TouchEvent): void {
+    event.preventDefault()
 
-    this.activeGemX = gemPosition.x;
-    this.activeGemY = gemPosition.y;
+    this.hoverGem = this.canvasService.getCanvasGem(event.touches[0].clientX, event.touches[0].clientY);
+    this.activeGem = this.hoverGem;
 
     this.isGemExchange = true;
     this.mouseEvents = false;
   }
 
-  private handleTouchMove(event: TouchEvent) : void {
-    const gemPosition = this.canvasService.getCanvasGem(event.touches[0].clientX, event.touches[0].clientY)
+  private handleTouchMove(event: TouchEvent): void {
+    event.preventDefault()
 
-    this.hoverGemX = gemPosition.x;
-    this.hoverGemY = gemPosition.y;
+    this.hoverGem = this.canvasService.getCanvasGem(event.touches[0].clientX, event.touches[0].clientY)
   }
 
-  private handleTouchEnd() : void {
+  private handleTouchEnd(event: TouchEvent): void {
+    event.preventDefault()
+
     this.clearGems()
   }
 
-  private handleTouchCancel() : void {
+  private handleTouchCancel(event: TouchEvent): void {
+    event.preventDefault()
+
     this.clearGems()
   }
 }
