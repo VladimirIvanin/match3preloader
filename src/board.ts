@@ -99,7 +99,8 @@ export class Board {
 
             const matches = this.getMatches(gemsPositions)
             if (matches.length > 0) {
-                if (this.gemsPositions[index] == matches[0].name) {
+                const name: string = gemsPositions[matches[0].y * this.width + matches[0].x]!
+                if (this.gemsPositions[index] == name) {
                   return [index, index + offset];
                 } else {
                   return [index + offset, index];

@@ -202,6 +202,7 @@ export default class GameManager {
     let showHelp = false;
     let helpStartTime = 0
 
+    this.inputService.clearGems()
     const listen = (timeStamp: number): void => {
       playerInactiveTime += Date.now() - helpTimer
       helpTimer = Date.now()
