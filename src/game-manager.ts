@@ -65,12 +65,14 @@ export default class GameManager {
     this.firstPlayerPhase = true
     this.active = true
     this.board.makeZeroMatches()
+    this.inputService.start()
     this.canvasService.loadAssets().then(() => {
       this.dropPhase(true)
     })
   }
   stop(): void {
     this.active = false
+    this.inputService.destroy()
     requestAnimationFrame((_timeStamp) => {
       this.lastFrame = undefined;
       this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
@@ -82,6 +84,7 @@ export default class GameManager {
   }
   pause(): void {
     this.active = false
+    this.inputService.destroy()
     requestAnimationFrame((_timeStamp) => {
       this.canvasService.clear();
     });
@@ -91,6 +94,7 @@ export default class GameManager {
       return;
     }
     this.active = true;
+    this.inputService.start()
     requestAnimationFrame(this.lastFrame);
     this.lastFrame = undefined
   }

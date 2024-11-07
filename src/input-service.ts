@@ -35,19 +35,21 @@ export class InputService {
       handleTouchStart: this.handleTouchStart.bind(this),
       handleTouchEnd: this.handleTouchEnd.bind(this)
     }
-
-    this.canvasService.canvas.addEventListener('mousemove', this.eventMethods.handleMouseMove);
-    this.canvasService.canvas.addEventListener('mouseout', this.eventMethods.handleMouseOut);
-    this.canvasService.canvas.addEventListener('mousedown', this.eventMethods.handleMouseDown);
-    this.canvasService.canvas.addEventListener('touchmove', this.eventMethods.handleTouchMove);
-    this.canvasService.canvas.addEventListener('touchstart', this.eventMethods.handleTouchStart);
-    this.canvasService.canvas.addEventListener('touchend', this.eventMethods.handleTouchEnd);
   }
 
   clearGems(): void {
     this.hoverGem = undefined;
     this.activeGem = undefined;
     this.isGemExchange = false;
+  }
+
+  start(): void {
+    this.canvasService.canvas.addEventListener('mousemove', this.eventMethods.handleMouseMove);
+    this.canvasService.canvas.addEventListener('mouseout', this.eventMethods.handleMouseOut);
+    this.canvasService.canvas.addEventListener('mousedown', this.eventMethods.handleMouseDown);
+    this.canvasService.canvas.addEventListener('touchmove', this.eventMethods.handleTouchMove);
+    this.canvasService.canvas.addEventListener('touchstart', this.eventMethods.handleTouchStart);
+    this.canvasService.canvas.addEventListener('touchend', this.eventMethods.handleTouchEnd);
   }
 
   destroy(): void {
