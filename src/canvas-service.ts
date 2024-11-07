@@ -29,11 +29,11 @@ export class CanvasService {
 
   drawHand(x: number, y: number): void {
     const scale = 0.8;
-    const marginX = (1 - scale) / 2;
-    const xpixels = (marginX + x) * CELL_SIZE;
-    const marginY = (1.5 - scale) / 2;
-    const reverseY = this.board.height - 1 - y
-    const ypixels = (marginY + reverseY) * CELL_SIZE;
+    const margin = (1 - scale) / 2;
+    const xpixels = (margin + x) * CELL_SIZE;
+    const reverseY = this.board.height - 1 - y;
+    const offsetY = scale / 4;
+    const ypixels = (margin + offsetY + reverseY) * CELL_SIZE;
     this.ctx.drawImage(this.handImage, xpixels, ypixels, CELL_SIZE * scale, CELL_SIZE * scale);
   }
   drawGem(x: number, y: number, gem_name: string, scale: number = 0.9): void {
