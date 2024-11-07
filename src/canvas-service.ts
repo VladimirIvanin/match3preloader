@@ -1,106 +1,84 @@
 import { Board } from './board';
+import { Gem, GemInfo } from './types'
 import images from './images'
 
 const CANVAS_SCALE = 0.5;
 const CELL_SIZE = 200;
 
-type GemInfo = {
-  name: string
-  src: string
-  image: HTMLImageElement
-}
-
 export class CanvasService {
   ctx: CanvasRenderingContext2D
   canvas: HTMLCanvasElement
   gems_info: GemInfo[]
-  boardWidth: number
-  boardHeight: number
+  board: Board
   gems_images: Record<string, HTMLImageElement>
   handImage: HTMLImageElement
-  hoverGemX: number | undefined
-  hoverGemY: number | undefined
-  activeGemX: number | undefined
-  activeGemY: number | undefined
-  isGemExchange: boolean
 
-  constructor(selector: string, width: number, height: number, gems_info: GemInfo[]) {
+  constructor(selector: string, board: Board, gems_info: GemInfo[]) {
     this.canvas = document.querySelector<HTMLCanvasElement>(selector)!;
     if (!this.canvas) { throw 'Wrong selector'; }
     this.ctx = this.canvas.getContext("2d")!;
-    this.boardWidth = width;
-    this.boardHeight = height;
-    this.canvas.width = CELL_SIZE * this.boardWidth;
-    this.canvas.height = CELL_SIZE * this.boardHeight;
+    this.board = board;
+    this.canvas.width = CELL_SIZE * this.board.width;
+    this.canvas.height = CELL_SIZE * this.board.height;
     this.canvas.style.width = this.canvas.width * CANVAS_SCALE +'px';
     this.canvas.style.height = this.canvas.height * CANVAS_SCALE +'px';
     this.gems_info = gems_info;
     this.gems_images = {};
     this.handImage = new Image();
-    this.isGemExchange = false;
-
-    this.canvas.addEventListener('mousemove', (event) => {
-      const rect = this.canvas.getBoundingClientRect();
-      this.hoverGemX = Math.floor((event.clientX - rect.left) / (CANVAS_SCALE * CELL_SIZE));
-      this.hoverGemY = this.boardHeight - 1 - Math.floor((event.clientY - rect.top) / (CANVAS_SCALE * CELL_SIZE));
-    });
-
-    this.canvas.addEventListener('mouseout', () => {
-      this.hoverGemX = undefined;
-      this.hoverGemY = undefined;
-    });
-
-    this.canvas.addEventListener('mousedown', () => {
-      this.activeGemX = this.hoverGemX;
-      this.activeGemY = this.hoverGemY;
-      this.isGemExchange = true;
-    });
-
-    this.canvas.addEventListener('mouseup', () => {
-    });
   }
-  drawHand(x: number, y: number) {
+
+  drawHand(x: number, y: number): void {
     const scale = 0.8;
-    const margin = (1 - scale) / 2;
-    const xpixels = (margin + x) * CELL_SIZE;
-    const ypixels = (this.boardHeight - 1 - y + margin) * CELL_SIZE + CELL_SIZE / 4;
+    const marginX = (1 - scale) / 2;
+    const xpixels = (marginX + x) * CELL_SIZE;
+    const marginY = (1.5 - scale) / 2;
+    const reverseY = this.board.height - 1 - y
+    const ypixels = (marginY + reverseY) * CELL_SIZE;
     this.ctx.drawImage(this.handImage, xpixels, ypixels, CELL_SIZE * scale, CELL_SIZE * scale);
   }
-  drawGem(x: number, y: number, gem_name: string, scale: number = 0.9) {
+  drawGem(x: number, y: number, gem_name: string, scale: number = 0.9): void {
     const margin = (1 - scale) / 2;
     const xpixels = (margin + x) * CELL_SIZE;
-    const ypixels = (this.boardHeight - 1 - y + margin) * CELL_SIZE;
+    const ypixels = (this.board.height - 1 - y + margin) * CELL_SIZE;
     this.ctx.drawImage(this.gems_images[gem_name], xpixels, ypixels, CELL_SIZE * scale, CELL_SIZE * scale);
   }
-  drawBoard(board: Board, exceptions: number[][] = []) {
-    for(let x = 0; x < board.width; x++) {
-      for(let y = 0; y < board.height; y++) {
-        const gem = board.getGem(x, y);
+  drawBoard(exceptions?: Gem[]): void {
+    for(let x = 0; x < this.board.width; x++) {
+      for(let y = 0; y < this.board.height; y++) {
+        const gem = this.board.getGem(x, y);
         if (!gem) { continue; }
-        if (exceptions.some((exception) => exception[0] == x && exception[1] == y)) { continue; }
+        if (exceptions && exceptions.some((gem) => gem.x == x && gem.y == y)) { continue; }
 
         this.drawGem(x, y, gem);
       }
     }
   }
-  clear() {
+  clear(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
-  loadAssets() {
+  async loadAssets(): Promise<void> {
     const promiseList: Promise<void>[] = [];
-    this.gems_info.forEach((gem) => {
-      promiseList.push(new Promise<void>((resolve) => {
+    this.gems_info.forEach((gem: GemInfo) => {
+      promiseList.push(new Promise((resolve) => {
         gem.image.src = gem.src;
-        gem.image.onload = () => {
+        gem.image.onload = (): void => {
           this.gems_images[gem.name] = gem.image;
           resolve();
         };
       }));
     })
-    promiseList.push(new Promise<void>((resolve) => {
+    promiseList.push(new Promise((resolve) => {
       this.handImage.src = images.hand;
-      this.handImage.onload = () => { resolve(); };
+      this.handImage.onload = (): void => { resolve(); };
     }));
-    return Promise.all(promiseList);
+    await Promise.all(promiseList);
+  }
+  getCanvasGem(eventX: number, eventY: number) : Gem | undefined {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.floor((eventX - rect.left) / (CANVAS_SCALE * CELL_SIZE));
+    const y = this.board.height - 1 - Math.floor((eventY - rect.top) / (CANVAS_SCALE * CELL_SIZE));
+    const name = this.board.getGem(x, y)
+    if (!name) { return undefined }
+    return {x, y, name}
   }
 }

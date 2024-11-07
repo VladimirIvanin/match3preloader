@@ -1,8 +1,4 @@
-type Gem = {
-  x: number,
-  y: number,
-  name: string
-}
+import { Gem } from './types'
 
 export class Board {
   gemsPositions: (string | undefined)[]
@@ -18,17 +14,17 @@ export class Board {
     this.gemsPositions = [];
     this.gemsFallHeight = [];
   }
-  getGem(x: number, y: number) : string | undefined {
+  getGem(x: number, y: number): string | undefined {
     return this.gemsPositions[y * this.width + x];
   }
-  getGemFallHeight(x: number, y: number) : number {
+  getGemFallHeight(x: number, y: number): number {
     return this.gemsFallHeight[y * this.width + x] || 0;
   }
-  setGem(x: number, y: number, gem: string | undefined) : void {
+  setGem(x: number, y: number, gem: string | undefined): void {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) { return; }
     this.gemsPositions[y * this.width + x] = gem;
   }
-  makeZeroMatches() : void {
+  makeZeroMatches(): void {
     this.recalculatePositions();
 
     while (this.getMatches().length > 0 || !this.getPossibleMatch()) {
@@ -42,7 +38,7 @@ export class Board {
     })
     this.recalculatePositions(true)
   }
-  recalculatePositions(precalculated?: boolean) : void {
+  recalculatePositions(precalculated?: boolean): void {
     if (!precalculated) {
       for(let i = 0; i < this.width * this.height; i++) {
         const gem = this.gems[Math.floor(Math.random() * this.gems.length)];
@@ -76,18 +72,18 @@ export class Board {
     }
     this.gemsPositions = this.gemsPositions.slice(0, this.width * this.height);
   }
-  clearBoard() : void {
+  clearBoard(): void {
     this.gemsPositions = []
   }
-  sliceMatches() : number[][] {
-    const matches: number[][] = this.getMatches();
-    matches.forEach((match) => { this.setGem(match[0], match[1], undefined) })
+  sliceMatches(): Gem[] {
+    const matches: Gem[] = this.getMatches();
+    matches.forEach((match) => { this.setGem(match.x, match.y, undefined) })
     return matches
   }
   getPossibleMatch(): Gem[] | undefined {
     const indexes = Array.from({ length: this.width * this.height }, (_, i) => i).sort(() => Math.random() - 0.5);
 
-    const checkSwaps = (direction: string) => {
+    const checkSwaps = (direction: string): number[] | undefined => {
         let offset: number = 1
         if (direction === 'x') { offset = 1 }
         else if (direction === 'y') { offset = this.width }
@@ -103,7 +99,7 @@ export class Board {
 
             const matches = this.getMatches(gemsPositions)
             if (matches.length > 0) {
-                const name: string = gemsPositions[matches[0][1] * this.width + matches[0][0]]!
+                const name: string = gemsPositions[matches[0].y * this.width + matches[0].x]!
                 if (this.gemsPositions[index] == name) {
                   return [index, index + offset];
                 } else {
@@ -114,7 +110,7 @@ export class Board {
         return undefined;
     };
 
-    const directions = Math.round(Math.random()) === 0 ? ['x', 'y'] : ['y', 'x'] // 1 for horizontal, width for vertical
+    const directions = Math.round(Math.random()) === 0 ? ['x', 'y']: ['y', 'x'] // 1 for horizontal, width for vertical
 
     for (const direction of directions) {
       const resultIndexes = checkSwaps(direction);
@@ -131,8 +127,8 @@ export class Board {
     return undefined;
   }
 
-  getMatches(gemsPositions: (string | undefined)[] = this.gemsPositions) : number[][] {
-    const checkForMatches = (indexes: number[]) => {
+  getMatches(gemsPositions: (string | undefined)[] = this.gemsPositions) : Gem[] {
+    const checkForMatches = (indexes: number[]) : void => {
       let gemCount: number = 1;
       let gemName: string | undefined = gemsPositions[indexes[0]];
       if (gemName === undefined) { throw new Error('Проверка на совпадения с незаполненными гемами') }
@@ -166,11 +162,15 @@ export class Board {
     }
     horizontalIndexes.forEach((indexes) => { checkForMatches(indexes); })
     verticalIndexes.forEach((indexes) => { checkForMatches(indexes); })
-    const matches: number[][] = []
+    const matches: Gem[] = []
     matchesPositions.forEach((_match, index) => {
-      matches.push([index % this.width, Math.floor(index / this.width)]);
+      const x = index % this.width;
+      const y = Math.floor(index / this.width);
+      const name = this.getGem(x, y)
+      if (name) {
+        matches.push({ x, y, name });
+      }
     })
-    return  matches
+    return matches
   }
 }
-

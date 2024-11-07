@@ -1,8 +1,10 @@
 import { Board } from './board';
 import { CanvasService } from './canvas-service';
+import { InputService } from './input-service';
+import { Gem, GemInfo } from './types'
 import images from './images'
 
-const GEMS_INFO = [
+const GEMS_INFO: GemInfo[] = [
   { name: "mails",
     src: images.mails,
     image: new Image()
@@ -27,9 +29,11 @@ const GEMS_INFO = [
 const BOARD_WIDTH = 5;
 const BOARD_HEIGHT = 5;
 const HELP_THRESHOLD = 5;
+const HELP_ANIMATION_LENGTH = 600;
+const HAND_ANIMATION_LENGTH = 1200;
 
-type Callbacks = {
-  scoreUpdate?: ((score: number) => void)
+interface Callbacks {
+  scoreUpdate?: ((score: number) => void);
 }
 
 export default class GameManager {
@@ -38,12 +42,15 @@ export default class GameManager {
   private active: boolean
   private board: Board
   private canvasService: CanvasService
+  private inputService: InputService
   private firstPlayerPhase: boolean
   private callbacks: Callbacks
   private lastFrame: ((timeStamp: number) => void) | undefined
+
   constructor(selector: string, options?: object, callbacks?: Callbacks) {
     this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
-    this.canvasService = new CanvasService(selector, BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO);;
+    this.canvasService = new CanvasService(selector, this.board, GEMS_INFO);;
+    this.inputService = new InputService(this.canvasService);
     this.active = false;
     this.score = 0;
     this.playerInactiveTime = 0;
@@ -53,17 +60,19 @@ export default class GameManager {
     }
     this.lastFrame = undefined
   }
-  start() {
+  start(): void {
     if (this.active) { return; }
     this.firstPlayerPhase = true
     this.active = true
     this.board.makeZeroMatches()
+    this.inputService.start()
     this.canvasService.loadAssets().then(() => {
       this.dropPhase(true)
     })
   }
-  stop() {
+  stop(): void {
     this.active = false
+    this.inputService.destroy()
     requestAnimationFrame((_timeStamp) => {
       this.lastFrame = undefined;
       this.board = new Board(BOARD_WIDTH, BOARD_HEIGHT, GEMS_INFO.map(gem => gem.name));
@@ -73,35 +82,37 @@ export default class GameManager {
       this.canvasService.clear();
     });
   }
-  pause() {
+  pause(): void {
     this.active = false
+    this.inputService.destroy()
     requestAnimationFrame((_timeStamp) => {
       this.canvasService.clear();
     });
   }
-  resume() {
+  resume(): void {
     if (this.active || !this.lastFrame) {
       return;
     }
     this.active = true;
+    this.inputService.start()
     requestAnimationFrame(this.lastFrame);
     this.lastFrame = undefined
   }
-  private addScore(addition: number) {
+  private addScore(addition: number): void {
     this.score += addition
     if (this.callbacks.scoreUpdate) {
       this.callbacks.scoreUpdate(this.score);
     }
   }
-  private dropPhase(precalculated?: boolean) {
+  private dropPhase(precalculated?: boolean): void {
     if (!precalculated) { this.board.recalculatePositions(); }
 
-    let startTime: number = 0;
-    const animate = (timeStamp: number) => {
+    let startTime = 0;
+    const animate = (timeStamp: number): void => {
       if (startTime === 0) { startTime = timeStamp; }
       const timeCounter: number = (timeStamp - startTime) / 150;
-      let offset: number = 0.1;
-      let animationFinished: boolean = true;
+      let offset = 0.1;
+      let animationFinished = true;
 
       this.canvasService.clear();
       for(let x = 0; x < this.board.width; x++) {
@@ -126,10 +137,10 @@ export default class GameManager {
     }
     this.nextTick(animate);
   }
-  private restartPhase() {
+  private restartPhase(): void {
     const animationLength = 300;
-    let startTime: number = 0;
-    const animate = (timeStamp: number) => {
+    let startTime = 0;
+    const animate = (timeStamp: number): void => {
       if (startTime === 0) { startTime = timeStamp; }
       let timePercent = (animationLength + startTime - timeStamp) / animationLength;
       if (timePercent < 0) { timePercent = 0 }
@@ -137,7 +148,8 @@ export default class GameManager {
       this.canvasService.clear();
       for(let x = 0; x < this.board.width; x++) {
         for(let y = 0; y < this.board.height; y++) {
-          const gem = this.board.getGem(x, y)!
+          const gem = this.board.getGem(x, y)
+          if (!gem) { continue; }
           this.canvasService.drawGem(x, y, gem, 0.9 * timePercent);
         }
       }
@@ -151,23 +163,23 @@ export default class GameManager {
     }
     this.nextTick(animate);
   }
-  private explosionPhase() {
+  private explosionPhase(): void {
     const matches = this.board.getMatches();
     if (matches.length > 0) {
       this.addScore(matches.length * 100)
       const animationLength = 300;
-      let startTime: number = 0;
-      const animate = (timeStamp: number) => {
+      let startTime = 0;
+      const animate = (timeStamp: number): void => {
         if (startTime === 0) { startTime = timeStamp; }
         let timePercent = (animationLength + startTime - timeStamp) / animationLength;
         if (timePercent < 0) { timePercent = 0 }
 
         this.canvasService.clear();
-        this.canvasService.drawBoard(this.board, matches);
+        this.canvasService.drawBoard(matches);
         matches.forEach((match) => {
-          const gem = this.board.getGem(match[0], match[1])
-          if (!gem) { return; }
-          this.canvasService.drawGem(match[0], match[1], gem, 0.9 * timePercent);
+          const name = this.board.getGem(match.x, match.y)
+          if (!name) { return; }
+          this.canvasService.drawGem(match.x, match.y, name, 0.9 * timePercent);
         })
 
         if (timePercent === 0) {
@@ -182,19 +194,20 @@ export default class GameManager {
       this.playerPhase();
     }
   }
-  private playerPhase() {
+  private playerPhase(): void {
     const possibleMatches = this.board.getPossibleMatch()
     if (!possibleMatches) {
       this.restartPhase();
       return;
     }
-    const helpAnimationLength = 600;
-    const handAnimationLength = 1200;
+
     let helpTimer = Date.now()
     let playerInactiveTime = 0;
     let showHelp = false;
     let helpStartTime = 0
-    const listen = (timeStamp: number) => {
+
+    this.inputService.clearGems()
+    const listen = (timeStamp: number): void => {
       playerInactiveTime += Date.now() - helpTimer
       helpTimer = Date.now()
       if (showHelp === false && (playerInactiveTime > HELP_THRESHOLD * 1000)) {
@@ -202,84 +215,90 @@ export default class GameManager {
         helpStartTime = timeStamp;
       }
 
-      const hoverGemX: number | undefined = this.canvasService.hoverGemX;
-      const hoverGemY: number | undefined = this.canvasService.hoverGemY;
-      const activeGemX: number | undefined = this.canvasService.activeGemX;
-      const activeGemY: number | undefined = this.canvasService.activeGemY;
+      const hoverGem: Gem | undefined = this.inputService.hoverGem;
+      const activeGem: Gem | undefined = this.inputService.activeGem;
+
       this.canvasService.clear();
-      const exceptions = hoverGemX != undefined && hoverGemY != undefined ? [[hoverGemX, hoverGemY]] : undefined;
-      this.canvasService.drawBoard(this.board, exceptions);
+      const exceptions = hoverGem !== undefined ? [hoverGem]: [];
+      this.canvasService.drawBoard(exceptions);
+
       if (showHelp) {
-        let timePercent = ((timeStamp - helpStartTime) % helpAnimationLength) / helpAnimationLength;
-        if (timePercent <= 0.5) {
-          timePercent *= 2
-        } else {
-          timePercent = (1 - timePercent) * 2
-        }
-        const nextGem = possibleMatches[0]
-        this.canvasService.drawGem(nextGem.x, nextGem.y, nextGem.name, 0.9 + 0.1 * timePercent);
+        this.drawEmphasisGem(timeStamp - helpStartTime, possibleMatches[0]);
       }
-      if (hoverGemX !== undefined && hoverGemY !== undefined) {
-        const gemName = this.board.getGem(hoverGemX, hoverGemY)
-        if (gemName !== undefined) {
-          this.canvasService.drawGem(hoverGemX, hoverGemY, gemName, 1);
-        }
+      if (hoverGem !== undefined) {
+        this.drawHoveredGem(timeStamp, hoverGem)
       }
       if (this.firstPlayerPhase) {
-        let timePercent = (timeStamp % handAnimationLength) / handAnimationLength;
-        if (timePercent <= 0.5) {
-          timePercent *= 2
-        } else {
-          timePercent = (1 - timePercent) * 2
-        }
-        const diffx = possibleMatches[1].x - possibleMatches[0].x;
-        const diffy = possibleMatches[1].y - possibleMatches[0].y;
-        this.canvasService.drawHand(possibleMatches[0].x + diffx * timePercent, possibleMatches[0].y + diffy * timePercent);
+        this.drawHand(timeStamp, possibleMatches)
       }
-      if (this.canvasService.isGemExchange && hoverGemX !== undefined && hoverGemY !== undefined && activeGemX !== undefined && activeGemY !== undefined) {
-        let targetGemX: number, targetGemY: number
-        if (Math.abs(hoverGemX - activeGemX) != Math.abs(hoverGemY - activeGemY)) {
-          if (Math.abs(hoverGemX - activeGemX) > Math.abs(hoverGemY - activeGemY)) {
-            targetGemX = activeGemX - Math.sign(activeGemX - hoverGemX);
-            targetGemY = activeGemY;
-          } else {
-            targetGemX = activeGemX;
-            targetGemY = activeGemY - Math.sign(activeGemY - hoverGemY);
-          }
-          this.canvasService.hoverGemX = undefined;
-          this.canvasService.hoverGemY = undefined;
-          this.canvasService.activeGemX = undefined;
-          this.canvasService.activeGemY = undefined;
-          this.canvasService.isGemExchange = false;
-
+      if (this.inputService.isGemExchange && hoverGem !== undefined && activeGem !== undefined) {
+        if (Math.abs(hoverGem.x - activeGem.x) != Math.abs(hoverGem.y - activeGem.y)) {
+          this.inputService.clearGems()
           this.firstPlayerPhase = false;
-          this.gemMovePhase(targetGemX, targetGemY, activeGemX, activeGemY);
-        } else {
-          this.nextTick(listen);
+
+          const targetGem = this.getTargetGem(hoverGem, activeGem);
+          if (targetGem) {
+            this.gemMovePhase(targetGem, activeGem);
+            return;
+          }
         }
-      } else {
-        this.nextTick(listen);
       }
+      this.nextTick(listen);
     }
     this.nextTick(listen);
   }
-  private gemMovePhase(targetGemX: number, targetGemY: number, activeGemX: number, activeGemY: number) {
-    const firstGem = this.board.getGem(activeGemX, activeGemY);
-    const secondGem = this.board.getGem(targetGemX, targetGemY);
-    if (firstGem === undefined || secondGem === undefined) {
-      this.playerPhase();
+  private drawEmphasisGem(timeStamp: number, gem: Gem): void {
+    let timePercent = (timeStamp % HELP_ANIMATION_LENGTH) / HELP_ANIMATION_LENGTH;
+    if (timePercent <= 0.5) {
+      timePercent *= 2
+    } else {
+      timePercent = (1 - timePercent) * 2
+    }
+    this.canvasService.drawGem(gem.x, gem.y, gem.name, 0.9 + 0.1 * timePercent);
+  }
+  private drawHoveredGem(_timeStamp: number, hoverGem: Gem): void {
+    this.canvasService.drawGem(hoverGem.x, hoverGem.y, hoverGem.name, 1);
+  }
+  private drawHand(timeStamp: number, possibleMatches: Gem[]) : void {
+    let timePercent = (timeStamp % HAND_ANIMATION_LENGTH) / HAND_ANIMATION_LENGTH;
+    if (timePercent <= 0.5) {
+      timePercent *= 2
+    } else {
+      timePercent = (1 - timePercent) * 2
+    }
+    const diffx = possibleMatches[1].x - possibleMatches[0].x;
+    const diffy = possibleMatches[1].y - possibleMatches[0].y;
+    this.canvasService.drawHand(possibleMatches[0].x + diffx * timePercent, possibleMatches[0].y + diffy * timePercent);
+  }
+  private getTargetGem(hoverGem: Gem, activeGem: Gem): Gem | undefined {
+    let targetGemX: number, targetGemY: number
+
+    if (Math.abs(hoverGem.x - activeGem.x) > Math.abs(hoverGem.y - activeGem.y)) {
+      targetGemX = activeGem.x - Math.sign(activeGem.x - hoverGem.x);
+      targetGemY = activeGem.y;
+    } else {
+      targetGemX = activeGem.x;
+      targetGemY = activeGem.y - Math.sign(activeGem.y - hoverGem.y);
+    }
+
+    const targetGemName = this.board.getGem(targetGemX, targetGemY);
+    if (!targetGemName) {
+      this.inputService.clearGems();
       return;
     }
-    this.board.setGem(activeGemX, activeGemY, secondGem);
-    this.board.setGem(targetGemX, targetGemY, firstGem);
+    return { x: targetGemX, y: targetGemY, name: targetGemName }
+  }
+  private gemMovePhase(targetGem: Gem, activeGem: Gem): void {
+    this.board.setGem(activeGem.x, activeGem.y, targetGem.name);
+    this.board.setGem(targetGem.x, targetGem.y, activeGem.name);
 
     const animation = (
       timeFuction: (timePercent: number) => [number, number],
       callback: () => void,
       animationLength: number
-    ) => {
+    ): void => {
       let startTime: number = 0;
-      const animate = (timeStamp: number) => {
+      const animate = (timeStamp: number): void => {
         if (startTime === 0) { startTime = timeStamp; }
         const timeCounter = timeStamp - startTime;
         const timePercent = timeCounter / animationLength;
@@ -289,9 +308,9 @@ export default class GameManager {
         const tRot: number = tArr[1];
 
         this.canvasService.clear();
-        this.canvasService.drawBoard(this.board, [[activeGemX, activeGemY], [targetGemX, targetGemY]]);
-        this.canvasService.drawGem(targetGemX + (activeGemX - targetGemX) * tPos, targetGemY + (activeGemY - targetGemY) * tPos, secondGem, 0.9 * (1 - tRot / 5));
-        this.canvasService.drawGem(activeGemX + (targetGemX - activeGemX) * tPos, activeGemY + (targetGemY - activeGemY) * tPos, firstGem, 0.9 * (1 + tRot / 10));
+        this.canvasService.drawBoard([activeGem, targetGem]);
+        this.canvasService.drawGem(targetGem.x + (activeGem.x - targetGem.x) * tPos, targetGem.y + (activeGem.y - targetGem.y) * tPos, targetGem.name, 0.9 * (1 - tRot / 5));
+        this.canvasService.drawGem(activeGem.x + (targetGem.x - activeGem.x) * tPos, activeGem.y + (targetGem.y - activeGem.y) * tPos, activeGem.name, 0.9 * (1 + tRot / 10));
 
         if (timePercent >= 1) {
           callback();
@@ -334,13 +353,13 @@ export default class GameManager {
         }
         return arr;
       }, () => {
-        this.board.setGem(activeGemX, activeGemY, firstGem);
-        this.board.setGem(targetGemX, targetGemY, secondGem);
+        this.board.setGem(activeGem.x, activeGem.y, activeGem.name);
+        this.board.setGem(targetGem.x, targetGem.y, targetGem.name);
         this.playerPhase();
       }, 600);
     }
   }
-  private nextTick(fn: (timeStamp: number) => void) {
+  private nextTick(fn: (timeStamp: number) => void): void {
     if (!this.active) {
       this.lastFrame = fn;
       return
