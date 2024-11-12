@@ -58,7 +58,7 @@ export default {
       :width="500"
       :height="500"
       :gemTypes="5"
-      @scoreUpdate="onScoreUpdate"
+      :callbacks="{ scoreUpdate: onScoreUpdate }"
     />
   `,
   methods: {
