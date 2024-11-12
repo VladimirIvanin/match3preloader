@@ -55,8 +55,8 @@ export default {
   },
   template: `
     <Match3PreloaderVue2
-      :width="8"
-      :height="8"
+      :width="500"
+      :height="500"
       :gemTypes="5"
       @scoreUpdate="onScoreUpdate"
     />
@@ -80,16 +80,6 @@ new Match3Preloader(canvasSelector, gameOptions, callbacks)
 - `canvasSelector`: String - CSS selector for the canvas element
 - `gameOptions`: Object - Game configuration options
 - `callbacks`: Object - Callback functions for game events
-
-### Game Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| width | Number | 8 | Width of the game board |
-| height | Number | 8 | Height of the game board |
-| gemTypes | Number | 5 | Number of different gem types |
-| matchSize | Number | 3 | Minimum number of gems for a match |
-| fallSpeed | Number | 0.5 | Speed of falling gems (in seconds) |
 
 ### Callbacks
 
