@@ -103,6 +103,7 @@ button:disabled {
 }
 
 #score {
+  margin-top: 1.5rem;
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
