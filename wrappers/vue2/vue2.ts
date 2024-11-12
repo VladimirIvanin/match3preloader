@@ -55,12 +55,6 @@ export default Vue.extend({
     }
   },
   render(h) {
-    return h('canvas', {
-      style: {
-        width: '100%',
-        height: 'auto',
-        display: 'block',
-      }
-    });
+    return h('canvas');
   },
 });
