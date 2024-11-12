@@ -26,7 +26,6 @@ export default Vue.extend({
       const canvasId = `match3-canvas-${(this as any)._uid}`;
       (this.$el as HTMLCanvasElement).id = canvasId;
 
-      // Передаем селектор вместо элемента
       this.match3 = new Match3Preloader(`#${canvasId}`, this.options, this.callbacks);
     },
     start() {
