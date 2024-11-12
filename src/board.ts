@@ -37,8 +37,10 @@ export class Board {
       this.gemsPositions[index] = undefined
     })
     this.recalculatePositions(true)
+    console.log('makeZeroMatches')
   }
   recalculatePositions(precalculated?: boolean): void {
+    console.log('recalculatePositions')
     if (!precalculated) {
       for(let i = 0; i < this.width * this.height; i++) {
         const gem = this.gems[Math.floor(Math.random() * this.gems.length)];
@@ -73,9 +75,11 @@ export class Board {
     this.gemsPositions = this.gemsPositions.slice(0, this.width * this.height);
   }
   clearBoard(): void {
+    console.log('clearBoard')
     this.gemsPositions = []
   }
   sliceMatches(): Gem[] {
+    console.log('sliceMatches')
     const matches: Gem[] = this.getMatches();
     matches.forEach((match) => { this.setGem(match.x, match.y, undefined) })
     return matches

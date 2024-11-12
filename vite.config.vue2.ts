@@ -1,15 +1,16 @@
-import { defineConfig } from 'vite';
+import { resolve } from 'path';
 import vue from '@vitejs/plugin-vue2';
 import dts from 'vite-plugin-dts';
-import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [vue(), dts()],
+  plugins: [vue(), dts({ outDir: 'dist/vue2' })],
   build: {
+    outDir: 'dist/vue2',
     lib: {
       entry: resolve(__dirname, 'wrappers/vue2/vue2.ts'),
       name: 'Match3PreloaderVue2',
-      fileName: (format) => `vue2/match3preloader.${format}.js`,
+      fileName: (format) => `match3preloader.${format}.js`,
     },
     rollupOptions: {
       external: ['vue'],
@@ -19,5 +20,6 @@ export default defineConfig({
         },
       },
     },
+    emptyOutDir: false,
   },
 });
