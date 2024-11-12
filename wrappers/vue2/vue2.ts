@@ -8,10 +8,6 @@ export default Vue.extend({
       type: Object,
       default: () => ({}),
     },
-    callbacks: {
-      type: Object,
-      default: () => ({}),
-    },
   },
   data() {
     return {
@@ -26,7 +22,11 @@ export default Vue.extend({
       const canvasId = `match3-canvas-${(this as any)._uid}`;
       (this.$el as HTMLCanvasElement).id = canvasId;
 
-      this.match3 = new Match3Preloader(`#${canvasId}`, this.options, this.callbacks);
+      this.match3 = new Match3Preloader(`#${canvasId}`, this.options, {
+        scoreUpdate: (score: number) => {
+          this.$emit('score-update', score);
+        }
+      });
     },
     start() {
       if (this.match3) {
@@ -56,10 +56,11 @@ export default Vue.extend({
   },
   render(h) {
     return h('canvas', {
-      attrs: {
-        width: this.options.width || 500,
-        height: this.options.height || 500,
-      },
+      style: {
+        width: '100%',
+        height: 'auto',
+        display: 'block',
+      }
     });
   },
 });

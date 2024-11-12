@@ -55,10 +55,7 @@ export default {
   },
   template: `
     <Match3PreloaderVue2
-      :width="500"
-      :height="500"
-      :gemTypes="5"
-      :callbacks="{ scoreUpdate: onScoreUpdate }"
+      @score-update="onScoreUpdate"
     />
   `,
   methods: {
