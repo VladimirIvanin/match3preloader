@@ -17,8 +17,7 @@
     },
     "./vue2": {
       "import": "./dist/vue2/match3preloader.es.js",
-      "require": "./dist/vue2/match3preloader.umd.js",
-      "types": "./dist/vue2/match3preloader.d.ts"
+      "require": "./dist/vue2/match3preloader.umd.js"
     }
   },
   "files": [
