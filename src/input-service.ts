@@ -101,10 +101,4 @@ export class InputService {
 
     this.clearGems()
   }
-
-  private handleTouchCancel(event: TouchEvent): void {
-    event.preventDefault()
-
-    this.clearGems()
-  }
 }

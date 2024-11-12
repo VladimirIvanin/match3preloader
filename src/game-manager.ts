@@ -59,23 +59,18 @@ export default class GameManager {
       scoreUpdate: callbacks?.scoreUpdate
     }
     this.lastFrame = undefined
-    console.log('constructor this.lastFrame', this.lastFrame)
   }
   start(): void {
-    console.log('start')
-    console.log(this.lastFrame)
     if (this.active) { return; }
     this.firstPlayerPhase = true
     this.active = true
     this.board.makeZeroMatches()
     this.inputService.start()
     this.canvasService.loadAssets().then(() => {
-      console.log('assets loaded')
       this.dropPhase(true)
     })
   }
   stop(): void {
-    console.log('stop')
     this.active = false
     this.inputService.destroy()
     requestAnimationFrame((_timeStamp) => {
@@ -112,10 +107,8 @@ export default class GameManager {
   private dropPhase(precalculated?: boolean): void {
     if (!precalculated) { this.board.recalculatePositions(); }
 
-    console.log('dropPhase this.lastFrame', this.lastFrame)
     let startTime = 0;
     const animate = (timeStamp: number): void => {
-      console.log('animate')
       if (startTime === 0) { startTime = timeStamp; }
       const timeCounter: number = (timeStamp - startTime) / 150;
       let offset = 0.1;
@@ -145,7 +138,6 @@ export default class GameManager {
     this.nextTick(animate);
   }
   private restartPhase(): void {
-    console.log('restartPhase')
     const animationLength = 300;
     let startTime = 0;
     const animate = (timeStamp: number): void => {
@@ -172,9 +164,7 @@ export default class GameManager {
     this.nextTick(animate);
   }
   private explosionPhase(): void {
-    console.log('explosionPhase this.lastFrame', this.lastFrame)
     const matches = this.board.getMatches();
-    console.log('matches.length', matches.length)
     if (matches.length > 0) {
       this.addScore(matches.length * 100)
       const animationLength = 300;
@@ -206,7 +196,6 @@ export default class GameManager {
   }
   private playerPhase(): void {
     const possibleMatches = this.board.getPossibleMatch()
-    console.log('playerPhase possibleMatches', possibleMatches)
     if (!possibleMatches) {
       this.restartPhase();
       return;
