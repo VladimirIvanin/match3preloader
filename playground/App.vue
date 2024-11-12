@@ -1,13 +1,13 @@
 <template>
   <div class="game-container">
     <Match3PreloaderVue2 ref="match3" :options="{}" :callbacks="{ scoreUpdate: updateScore }" />
+    <div id="score">Score: {{ score }}</div>
     <div class="controls">
       <button id="startButton" @click="startGame" :disabled="isGameRunning">Start</button>
       <button id="stopButton" @click="stopGame" :disabled="!isGameRunning">Stop</button>
       <button id="pauseButton" @click="pauseGame" :disabled="!isGameRunning || isPaused">Pause</button>
       <button id="resumeButton" @click="resumeGame" :disabled="!isGameRunning || !isPaused">Resume</button>
     </div>
-    <div id="score">Score: {{ score }}</div>
   </div>
 </template>
 
@@ -56,7 +56,7 @@ export default {
 .game-container {
   text-align: center;
   background-color: var(--container-background);
-  padding: 20px;
+  padding: 20px 20px 40px 20px;
   border-radius: 15px;
   box-shadow: 0 10px 20px var(--shadow-color);
   transition: all 0.3s ease;
@@ -64,8 +64,6 @@ export default {
 }
 
 .controls {
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
   display: flex;
   justify-content: center;
   gap: 1rem;
