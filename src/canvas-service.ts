@@ -20,8 +20,7 @@ export class CanvasService {
     this.board = board;
     this.canvas.width = CELL_SIZE * this.board.width;
     this.canvas.height = CELL_SIZE * this.board.height;
-    this.canvas.style.width = this.canvas.width * CANVAS_SCALE +'px';
-    this.canvas.style.height = this.canvas.height * CANVAS_SCALE +'px';
+    this.canvas.style.width = '100%';
     this.gems_info = gems_info;
     this.gems_images = {};
     this.handImage = new Image();

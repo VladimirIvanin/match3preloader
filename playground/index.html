@@ -34,28 +34,31 @@
       color: var(--text-color);
     }
 
-    .game-container {
+    .gameContainer {
       text-align: center;
       background-color: var(--container-background);
       padding: 20px;
       border-radius: 15px;
       box-shadow: 0 10px 20px var(--shadow-color);
       transition: all 0.3s ease;
+    }
+
+    .canvasContainer {
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
       width: 540px;
     }
 
     #gameCanvas {
-      border: 2px solid var(--border-color);
-      border-radius: 10px;
-      margin-bottom: 1.5rem;
       max-width: 100%;
-      min-width: 500px;
-      min-height: 500px;
+      width: 100%;
     }
 
     .controls {
       margin-bottom: 1.5rem;
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
       gap: 1rem;
     }
@@ -107,7 +110,9 @@
 
 <body>
   <div class="game-container">
-    <canvas id="gameCanvas"></canvas>
+    <div class="canvasContainer">
+      <canvas id="gameCanvas" width="1000" height="1000" style="width: 100%"></canvas>
+    </div>
     <div id="score">Score: 0</div>
     <div class="controls">
       <button id="startButton">Start</button>
